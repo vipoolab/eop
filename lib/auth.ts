@@ -157,6 +157,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.role = t.role;
         session.user.rank = t.rank;
         session.user.unitCode = t.unitCode;
+
+        // Re-fetch latest name from DB (in case it was updated post-login)
+        // Note: small perf cost per request; acceptable for demo phase
+        try {
+          const fresh = await prisma.user.findUnique({
+            where: { id: t.id },
+            select: { name: true, rank: true },
+          });
+          if (fresh) {
+            session.user.name = fresh.name;
+            session.user.rank = fresh.rank;
+          }
+        } catch {
+          // ignore — keep cached values
+        }
       }
       return session;
     },

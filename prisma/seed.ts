@@ -99,10 +99,10 @@ async function main() {
   const users = await Promise.all([
     prisma.user.upsert({
       where: { email: "commander@eop.test" },
-      update: {},
+      update: { name: "สมชาย แสงทอง", rank: "พล.ต.ต." },
       create: {
         email: "commander@eop.test",
-        name: "พล.ต.ต. สมชาย แสงทอง",
+        name: "สมชาย แสงทอง",
         rank: "พล.ต.ต.",
         passwordHash: password,
         role: "COMMANDER",
@@ -112,10 +112,10 @@ async function main() {
     }),
     prisma.user.upsert({
       where: { email: "staff@eop.test" },
-      update: {},
+      update: { name: "วิชัย ใจดี", rank: "พ.ต.ท." },
       create: {
         email: "staff@eop.test",
-        name: "พ.ต.ท. วิชัย ใจดี",
+        name: "วิชัย ใจดี",
         rank: "พ.ต.ท.",
         passwordHash: password,
         role: "STAFF",
@@ -125,10 +125,10 @@ async function main() {
     }),
     prisma.user.upsert({
       where: { email: "admin@eop.test" },
-      update: {},
+      update: { name: "ปกครอง พลเรือน", rank: "พ.ต.อ." },
       create: {
         email: "admin@eop.test",
-        name: "พ.ต.อ. ปกครอง พลเรือน",
+        name: "ปกครอง พลเรือน",
         rank: "พ.ต.อ.",
         passwordHash: password,
         role: "ADMIN",
@@ -138,10 +138,10 @@ async function main() {
     }),
     prisma.user.upsert({
       where: { email: "auditor@eop.test" },
-      update: {},
+      update: { name: "ตรวจสอบ ละเอียด", rank: "พ.ต.ท." },
       create: {
         email: "auditor@eop.test",
-        name: "พ.ต.ท. ตรวจสอบ ละเอียด",
+        name: "ตรวจสอบ ละเอียด",
         rank: "พ.ต.ท.",
         passwordHash: password,
         role: "AUDITOR",
@@ -151,10 +151,10 @@ async function main() {
     }),
     prisma.user.upsert({
       where: { email: "viewer@eop.test" },
-      update: {},
+      update: { name: "ดูข้อมูล อย่างเดียว", rank: "ร.ต.อ." },
       create: {
         email: "viewer@eop.test",
-        name: "ร.ต.อ. ดูข้อมูล อย่างเดียว",
+        name: "ดูข้อมูล อย่างเดียว",
         rank: "ร.ต.อ.",
         passwordHash: password,
         role: "VIEWER",
@@ -375,15 +375,96 @@ async function main() {
     },
   ];
 
+  // ─── Status progression per status (สำหรับสร้าง CommandStatusLog ย้อนหลัง)
+  const STATUS_PATH: Array<"DRAFT" | "SUBMITTED" | "APPROVED" | "PUBLISHED" | "ACKNOWLEDGED" | "IN_PROGRESS" | "REPORTED" | "AUDITED" | "CLOSED"> = [
+    "DRAFT",
+    "SUBMITTED",
+    "APPROVED",
+    "PUBLISHED",
+    "ACKNOWLEDGED",
+    "IN_PROGRESS",
+    "REPORTED",
+    "AUDITED",
+    "CLOSED",
+  ];
+
   for (const cmd of sampleCommands) {
-    await prisma.command.upsert({
+    const command = await prisma.command.upsert({
       where: { docNo: cmd.docNo },
       update: {},
       create: cmd,
     });
+
+    // Skip if already has targets (idempotent re-seed)
+    const existingTargets = await prisma.commandTarget.count({
+      where: { commandId: command.id },
+    });
+
+    if (existingTargets === 0) {
+      // เลือก 2-3 units ตาม recipient (สุ่มแบบ deterministic จาก docNo)
+      const numTargets = (cmd.docNo.charCodeAt(cmd.docNo.length - 1) % 3) + 2;
+      const startIdx = cmd.docNo.charCodeAt(cmd.docNo.length - 2) % units.length;
+      const targets = Array.from({ length: numTargets }, (_, i) => units[(startIdx + i) % units.length]);
+
+      // ถ้าสถานะ ACKNOWLEDGED ขึ้นไป → mark all acknowledged
+      const ackUpTo = STATUS_PATH.indexOf("ACKNOWLEDGED");
+      const cmdStatusIdx = STATUS_PATH.indexOf(cmd.status);
+      const allAck = cmdStatusIdx >= ackUpTo;
+      // ถ้า PUBLISHED → ack เฉพาะบางส่วน
+      const someAck = cmd.status === "PUBLISHED";
+
+      await prisma.commandTarget.createMany({
+        data: targets.map((u, i) => ({
+          commandId: command.id,
+          unitId: u.id,
+          acknowledged: allAck || (someAck && i === 0),
+          acknowledgedAt: allAck || (someAck && i === 0)
+            ? cmd.publishedAt ?? new Date()
+            : null,
+        })),
+      });
+    }
+
+    // Status log — สร้างย้อนหลังตามเส้นทาง state machine
+    const existingLog = await prisma.commandStatusLog.count({
+      where: { commandId: command.id },
+    });
+
+    if (existingLog === 0) {
+      const targetIdx = STATUS_PATH.indexOf(cmd.status);
+      const baseTime = cmd.publishedAt ?? new Date("2026-04-01");
+      const logs: Array<{
+        commandId: string;
+        from: typeof STATUS_PATH[number] | null;
+        to: typeof STATUS_PATH[number];
+        byUserId: string;
+        note: string | null;
+        createdAt: Date;
+      }> = [];
+
+      for (let i = 0; i <= targetIdx; i++) {
+        logs.push({
+          commandId: command.id,
+          from: i === 0 ? null : STATUS_PATH[i - 1],
+          to: STATUS_PATH[i],
+          byUserId: cmd.signerId ?? cmd.creatorId,
+          note:
+            i === 0
+              ? "สร้างคำสั่ง"
+              : i === STATUS_PATH.indexOf("APPROVED")
+                ? "อนุมัติ"
+                : i === STATUS_PATH.indexOf("CLOSED")
+                  ? "ปิดงานเรียบร้อย"
+                  : null,
+          createdAt: new Date(baseTime.getTime() - (targetIdx - i) * 24 * 60 * 60 * 1000),
+        });
+      }
+
+      await prisma.commandStatusLog.createMany({ data: logs });
+    }
   }
 
-  console.log(`  ✓ Created ${sampleCommands.length} sample commands`);
+  console.log(`  ✓ Created ${sampleCommands.length} sample commands (with targets + status log)`);
 
   // ────────────────────────────────────────────
   // Summary
