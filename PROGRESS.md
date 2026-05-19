@@ -10,11 +10,12 @@
 ## 🎯 Overall Progress
 
 ```
-Phase 1 MVP (7 วัน):  ████████░░░░░░░░░░░░  40%
+Phase 1 MVP (7 วัน):  ████████████░░░░░░░░  60%
 
 ✅ Foundation:        ████████████████████  100%
-🔄 Day 1 (Auth + Nav): ██████████░░░░░░░░░░  50%
-⏳ Day 2-7:            ░░░░░░░░░░░░░░░░░░░░  0%
+✅ Day 1 (Auth + Nav): ████████████████████ 100%
+✅ Day 2 (Command):    ████████████████████ 100%
+⏳ Day 3-7:            ░░░░░░░░░░░░░░░░░░░░  0%
 ```
 
 ---
@@ -136,25 +137,34 @@ eop-demo/
 - [x] Setup Git repo + push to GitHub
 - [x] Configure .gitignore (exclude .env, .mcp.json)
 
-### 🔄 Day 1: DB + Auth + Routes (50%)
-- [x] Prisma schema เขียนเสร็จ
-- [ ] **TODO:** User ให้ Neon DB URL
-- [ ] รัน `npx prisma migrate dev`
-- [ ] เขียน `prisma/seed.ts` + รัน seed
-- [ ] Setup Auth.js v5 + bcrypt
-- [ ] สร้าง `app/login/page.tsx`
-- [ ] สร้าง `middleware.ts` (auth + RBAC)
-- [ ] อัปเดต Sidebar ใช้ nav-config 20 หน้า
-- [ ] สร้าง placeholder pages 19 routes
-- [ ] สร้าง TOR Reference Banner component
+### ✅ Day 1: DB + Auth + Routes (100%)
+- [x] Prisma schema เขียนเสร็จ (18 models)
+- [x] Setup **Supabase** PostgreSQL (cloud)
+- [x] รัน `npx prisma migrate dev` — migration 0001 applied
+- [x] เขียน `prisma/seed.ts` + รัน seed (5 users + 6 units + plans + KPIs)
+- [x] Setup Auth.js v5 + bcrypt + Credentials provider + JWT (8h)
+- [x] สร้าง `app/login/page.tsx` (with Suspense)
+- [x] สร้าง `proxy.ts` (auth + redirect to /login) — Next.js 16
+- [x] อัปเดต Sidebar ใช้ `nav-config.ts` 20 หน้า
+- [x] สร้าง 19 placeholder pages พร้อม TOR Banner
+- [x] สร้าง TOR Reference Banner component
+- [x] Audit Log writes on login (success + fail)
 
-### ⏳ Day 2: Command CRUD + Workflow
-- [ ] Command CRUD API + UI
-- [ ] Workflow state machine (9 states)
-- [ ] e-Signature stub
-- [ ] Read Receipt + Smart Notification
-- [ ] Audit Log integration
-- [ ] Dashboard ดึง real data จาก DB
+### ✅ Day 2: Command CRUD + Workflow (100%)
+- [x] `features/commands/` foundation (types, workflow, validators, repository, service)
+- [x] **9-state workflow** state machine (TOR 4.1) — DRAFT → SUBMITTED → APPROVED → PUBLISHED → ACKNOWLEDGED → IN_PROGRESS → REPORTED → AUDITED → CLOSED
+- [x] RBAC per transition (ADMIN/COMMANDER/STAFF/AUDITOR/VIEWER)
+- [x] API: `GET/POST /api/commands` (list + create with pagination + filters)
+- [x] API: `GET /api/commands/[id]` (detail with relations)
+- [x] API: `POST /api/commands/[id]/transition` (state transition)
+- [x] UI: Kanban view `/command/workflow` (9 columns with cards)
+- [x] UI: Detail `/command/workflow/[id]` (full content + status history + transition buttons)
+- [x] UI: Create form `/command/workflow/new` (subject/body/units/priority/mission)
+- [x] e-Signature stub (signerId saved on approve, publishedAt on publish, closedAt on close)
+- [x] Read Receipt UI (per-unit acknowledged + acknowledgedAt timestamp)
+- [x] Audit Log writes ทุก action (create + transition + target acknowledge + delete)
+- [x] Dashboard ดึง **real data** จาก DB (totals, status breakdown, audit log)
+- [x] Seed 9 sample commands ครบ 9 สถานะ พร้อม Thai docNo (ตร ๐๐๐๑.๖๙/...)
 
 ### ⏳ Day 3: AI Command Drafting (PoC 1)
 - [ ] **TODO:** User ให้ Anthropic API key
@@ -253,3 +263,7 @@ Code:            ~5 KB (started)
 | 19 พ.ค. 2569 | Verify SYSTEM_OVERVIEW_PAPER.md vs TOR (v3.1) |
 | 19 พ.ค. 2569 | Approve: Modular Monolith + Claude API |
 | 19 พ.ค. 2569 | Create PROGRESS.md |
+| 19 พ.ค. 2569 | Day 1.1: Sidebar 20 routes + placeholder pages + TOR Banner |
+| 19 พ.ค. 2569 | Day 1.2: Supabase + Prisma 7 + adapter-pg + migrate + seed |
+| 19 พ.ค. 2569 | Day 1.3: Auth.js v5 + Login page + proxy.ts (Next 16) + audit log |
+| 19 พ.ค. 2569 | Day 2: Command CRUD + 9-state workflow + Kanban UI + Real Dashboard |

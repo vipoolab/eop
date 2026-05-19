@@ -266,6 +266,126 @@ async function main() {
   console.log(`  ✓ Created ${kpis.length} KPIs`);
 
   // ────────────────────────────────────────────
+  // 5. Sample Commands (กระจาย 9 สถานะ)
+  // ────────────────────────────────────────────
+  console.log("Creating sample commands...");
+
+  const commander = users[0]; // commander@eop.test
+  const staff = users[1]; // staff@eop.test
+
+  const sampleCommands = [
+    {
+      docNo: "ตร ๐๐๐๑.๖๙/๐๐๐๑",
+      subject: "เร่งรัดการดำเนินคดียาเสพติดในพื้นที่ภาคใต้",
+      recipient: "ผบช.มค., ผบช.ผบ., ผกก.สน. ทุก สน. ในภาค ๙",
+      reference: "หนังสือ ตร ที่ ๐๐๐๑.๒๖/๔๒",
+      objective: "ลดอัตราการแพร่ระบาดของยาเสพติดในไตรมาส ๔",
+      body: "ด้วยสถิติคดีอาญาเกี่ยวกับยาเสพติดในพื้นที่ภาคใต้มีแนวโน้มเพิ่มขึ้น จึงขอความร่วมมือทุกหน่วยให้เพิ่มความเข้มข้นในการตรวจ จัดจุดตรวจ และระดมกวาดล้างประจำสัปดาห์",
+      priority: "HIGH" as const,
+      status: "CLOSED" as const,
+      creatorId: commander.id,
+      signerId: commander.id,
+      publishedAt: new Date("2026-03-15"),
+      closedAt: new Date("2026-04-20"),
+    },
+    {
+      docNo: "ตร ๐๐๐๑.๖๙/๐๐๐๒",
+      subject: "กำหนดมาตรการรักษาความปลอดภัยช่วงเทศกาลสงกรานต์ ๒๕๖๙",
+      recipient: "ผบช., ผบก. ทุกพื้นที่",
+      objective: "ลดอุบัติเหตุและรักษาความปลอดภัยช่วงเทศกาล",
+      body: "ในช่วงเทศกาลสงกรานต์ระหว่างวันที่ ๑๓-๑๕ เมษายน ๒๕๖๙ ขอให้ทุกหน่วยจัดกำลังเสริมตามแผน และตั้งจุดตรวจวัดแอลกอฮอล์ทุก ๕ กิโลเมตรตามเส้นทางสายหลัก",
+      priority: "URGENT" as const,
+      status: "IN_PROGRESS" as const,
+      creatorId: commander.id,
+      signerId: commander.id,
+      publishedAt: new Date("2026-04-10"),
+    },
+    {
+      docNo: "ตร ๐๐๐๑.๖๙/๐๐๐๓",
+      subject: "แต่งตั้งคณะทำงานติดตามผลโครงการ EOP",
+      recipient: "ผบ.สยศ.ตร., ผบช.ยศ.",
+      objective: "ติดตามผลการพัฒนาและใช้งานระบบ EOP",
+      body: "ตามที่ ตร. ได้อนุมัติให้พัฒนาระบบ EOP เพื่อยกระดับการบริหารยุทธศาสตร์ ขอแต่งตั้งคณะทำงานติดตามผลโครงการประกอบด้วย...",
+      priority: "NORMAL" as const,
+      status: "ACKNOWLEDGED" as const,
+      creatorId: commander.id,
+      signerId: commander.id,
+      publishedAt: new Date("2026-05-01"),
+    },
+    {
+      docNo: "ตร ๐๐๐๑.๖๙/๐๐๐๔",
+      subject: "ขอเชิญประชุมคณะกรรมการประเมิน ITA ประจำปี ๒๕๖๙",
+      recipient: "อจ.สยศ.ตร., วจ.",
+      body: "ขอเชิญร่วมประชุมคณะกรรมการประเมิน ITA ในวันที่ ๓๐ พฤษภาคม ๒๕๖๙ ณ ห้องประชุม สยศ.ตร. ชั้น ๕",
+      priority: "NORMAL" as const,
+      status: "PUBLISHED" as const,
+      creatorId: commander.id,
+      signerId: commander.id,
+      publishedAt: new Date("2026-05-12"),
+    },
+    {
+      docNo: "ตร ๐๐๐๑.๖๙/๐๐๐๕",
+      subject: "การจัดตั้งศูนย์ปฏิบัติการพิเศษระหว่างเทศกาลคริสต์มาส",
+      recipient: "ผบช.มค., ผกก. ในพื้นที่ กทม.",
+      body: "เพื่อรักษาความปลอดภัยช่วงเทศกาลคริสต์มาส ขอจัดตั้งศูนย์ปฏิบัติการพิเศษและจัดกำลังเสริม...",
+      priority: "HIGH" as const,
+      status: "APPROVED" as const,
+      creatorId: staff.id,
+      signerId: commander.id,
+    },
+    {
+      docNo: "ตร ๐๐๐๑.๖๙/๐๐๐๖",
+      subject: "ขอความร่วมมือสำรวจอัตรากำลังประจำสถานี",
+      recipient: "ผกก.สน. ทุก สน.",
+      body: "เพื่อจัดทำแผนพัฒนาบุคลากร ขอให้ทุก สน. รายงานอัตรากำลังที่เป็นปัจจุบัน จำแนกตามหน้าที่",
+      priority: "NORMAL" as const,
+      status: "SUBMITTED" as const,
+      creatorId: staff.id,
+    },
+    {
+      docNo: "ตร ๐๐๐๑.๖๙/๐๐๐๗",
+      subject: "การปฏิบัติงานช่วงเลือกตั้งท้องถิ่น พ.ศ. ๒๕๖๙",
+      recipient: "ผบช., ผบก. ทุกพื้นที่",
+      body: "ในช่วงเลือกตั้งท้องถิ่น ขอให้ทุกหน่วยเข้มข้นในการรักษาความสงบเรียบร้อย...",
+      priority: "URGENT" as const,
+      status: "DRAFT" as const,
+      creatorId: commander.id,
+    },
+    {
+      docNo: "ตร ๐๐๐๑.๖๙/๐๐๐๘",
+      subject: "รายงานผลการกวาดล้างแหล่งอบายมุข ไตรมาส ๒",
+      recipient: "ผบช. ที่เกี่ยวข้อง",
+      body: "สรุปผลการกวาดล้างแหล่งอบายมุขในไตรมาส ๒ พบว่าสามารถจับกุมได้ ๑๒๐ ราย ยึดของกลางมูลค่า...",
+      priority: "NORMAL" as const,
+      status: "REPORTED" as const,
+      creatorId: staff.id,
+      signerId: commander.id,
+      publishedAt: new Date("2026-04-01"),
+    },
+    {
+      docNo: "ตร ๐๐๐๑.๖๙/๐๐๐๙",
+      subject: "ตรวจสอบผลปฏิบัติงานป้องกันและปราบปรามยาเสพติด",
+      recipient: "ฝ่ายอำนวยการ สยศ.ตร.",
+      body: "ตรวจสอบผลการปฏิบัติงานป้องกันและปราบปรามยาเสพติดในไตรมาส ๑ พบว่าหน่วยปฏิบัติสามารถดำเนินการตามแผน...",
+      priority: "NORMAL" as const,
+      status: "AUDITED" as const,
+      creatorId: staff.id,
+      signerId: commander.id,
+      publishedAt: new Date("2026-03-01"),
+    },
+  ];
+
+  for (const cmd of sampleCommands) {
+    await prisma.command.upsert({
+      where: { docNo: cmd.docNo },
+      update: {},
+      create: cmd,
+    });
+  }
+
+  console.log(`  ✓ Created ${sampleCommands.length} sample commands`);
+
+  // ────────────────────────────────────────────
   // Summary
   // ────────────────────────────────────────────
   console.log("\n✅ Seed completed successfully!\n");
