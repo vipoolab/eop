@@ -126,9 +126,9 @@ export default async function DashboardPage() {
             ภาพรวมการปฏิบัติงานปัจจุบัน
           </p>
         </div>
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-white text-slate-600 text-xs font-medium px-3 py-1 border border-slate-200 shadow-sm">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          Real-time
+        <span className="inline-flex items-center gap-1.5 rounded-sm bg-white text-slate-700 text-[11px] font-medium px-3 py-1 border border-slate-300 uppercase tracking-wider">
+          <span className="h-1.5 w-1.5 rounded-full bg-[#b8860b]" />
+          ข้อมูลปัจจุบัน
         </span>
       </div>
 
@@ -218,7 +218,7 @@ export default async function DashboardPage() {
                     </span>
                     <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
                       <div
-                        className="h-full bg-blue-500 rounded-full transition-all"
+                        className="h-full bg-[#1e3a5f] rounded-sm transition-all"
                         style={{ width: `${pct}%` }}
                       />
                     </div>
@@ -282,9 +282,9 @@ export default async function DashboardPage() {
           </div>
           <Link
             href="/security/audit"
-            className="text-xs text-blue-700 font-medium hover:underline"
+            className="text-xs text-[#1e3a5f] font-semibold hover:underline"
           >
-            ดูทั้งหมด
+            ดูทั้งหมด →
           </Link>
         </div>
         <div className="space-y-3">

@@ -40,7 +40,10 @@ export function Header() {
     <header className="h-16 border-b border-slate-200 bg-white flex items-center justify-between px-6">
       <div className="flex items-center gap-6">
         <div>
-          <p className="text-xs text-slate-500">{dateStr}</p>
+          <h1 className="text-sm font-semibold text-slate-900 leading-tight">
+            ระบบบูรณาการการวางแผนยุทธศาสตร์และติดตามการปฏิบัติงาน
+          </h1>
+          <p className="text-[11px] text-slate-500 mt-0.5">{dateStr}</p>
         </div>
       </div>
 
@@ -50,13 +53,13 @@ export function Header() {
           <input
             type="text"
             placeholder="ค้นหาคำสั่ง/รายงาน/หน่วยงาน..."
-            className="w-72 rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:border-blue-400 focus:bg-white"
+            className="w-72 rounded-sm border border-slate-200 bg-slate-50 pl-9 pr-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:border-[#1e3a5f] focus:bg-white transition-colors"
           />
         </div>
 
-        <button className="relative h-9 w-9 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center">
+        <button className="relative h-9 w-9 rounded-sm border border-slate-200 hover:bg-slate-50 flex items-center justify-center transition-colors">
           <Bell className="h-4 w-4 text-slate-600" />
-          <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500" />
+          <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-[#b8860b]" />
         </button>
 
         {/* User menu */}
@@ -65,7 +68,7 @@ export function Header() {
             onClick={() => setMenuOpen((v) => !v)}
             className="flex items-center gap-2 pl-3 pr-2 py-1.5 rounded-lg border border-transparent hover:bg-slate-50 hover:border-slate-200 transition-colors"
           >
-            <div className="h-9 w-9 rounded-full bg-blue-700 flex items-center justify-center text-white text-xs font-bold">
+            <div className="h-9 w-9 rounded-sm bg-[#1e3a5f] flex items-center justify-center text-white text-xs font-bold border border-[#142a45]">
               {user ? initials : <User className="h-4 w-4" />}
             </div>
             <div className="text-right pr-1">

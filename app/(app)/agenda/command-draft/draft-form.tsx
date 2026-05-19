@@ -245,7 +245,7 @@ export function CommandDraftForm() {
                 key={p.label}
                 type="button"
                 onClick={() => loadPreset(p)}
-                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-violet-50 hover:border-violet-300 px-3 py-2 text-xs text-slate-700 transition-colors text-left"
+                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-[#1e3a5f]/5 hover:border-[#1e3a5f] px-3 py-2 text-xs text-slate-700 transition-colors text-left"
               >
                 <span className="text-base">{p.icon}</span>
                 <span className="font-medium">{p.label}</span>
@@ -262,7 +262,7 @@ export function CommandDraftForm() {
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder="ระบุหัวเรื่องของคำสั่ง"
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]"
             />
           </Field>
 
@@ -273,7 +273,7 @@ export function CommandDraftForm() {
               value={objective}
               onChange={(e) => setObjective(e.target.value)}
               placeholder="เป้าหมายของการสั่งการ"
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 resize-none"
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f] resize-none"
             />
           </Field>
 
@@ -284,7 +284,7 @@ export function CommandDraftForm() {
               value={recipient}
               onChange={(e) => setRecipient(e.target.value)}
               placeholder="เช่น ผบก. / หน่วยปฏิบัติทุกหน่วยในสังกัด"
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]"
             />
           </Field>
 
@@ -295,7 +295,7 @@ export function CommandDraftForm() {
                 value={timeframe}
                 onChange={(e) => setTimeframe(e.target.value)}
                 placeholder="เช่น ภายใน ๓๐ พ.ค."
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]"
               />
             </Field>
 
@@ -305,7 +305,7 @@ export function CommandDraftForm() {
                 onChange={(e) =>
                   setPriority(e.target.value as CommandPriority)
                 }
-                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-violet-400"
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]"
               >
                 {PRIORITIES.map((p) => (
                   <option key={p} value={p}>
@@ -322,14 +322,14 @@ export function CommandDraftForm() {
               value={context}
               onChange={(e) => setContext(e.target.value)}
               placeholder="รายละเอียดสถานการณ์ ที่ต้องให้ AI พิจารณา"
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 resize-none"
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a5f] resize-none"
             />
           </Field>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 px-4 py-3 text-sm font-semibold text-white shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-[#1e3a5f] hover:bg-[#142a45] border border-[#142a45] px-4 py-3 text-sm font-semibold text-white shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (
               <>
@@ -395,8 +395,8 @@ export function CommandDraftForm() {
         {loading && (
           <div className="flex flex-col items-center justify-center h-96 text-center">
             <div className="relative">
-              <Loader2 className="h-12 w-12 animate-spin text-violet-600" />
-              <Sparkles className="h-5 w-5 absolute top-3.5 left-3.5 text-violet-400" />
+              <Loader2 className="h-12 w-12 animate-spin text-[#1e3a5f]" />
+              <Sparkles className="h-5 w-5 absolute top-3.5 left-3.5 text-[#1e3a5f]/40" />
             </div>
             <p className="text-sm text-slate-600 mt-3">
               Claude AI กำลังร่างคำสั่ง...
@@ -441,7 +441,7 @@ export function CommandDraftForm() {
             <button
               onClick={saveAsDraft}
               disabled={loading}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-700 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50"
+              className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-[#1e3a5f] hover:bg-[#142a45] border border-[#142a45] px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50"
             >
               <FileText className="h-4 w-4" />
               บันทึกเป็นร่างคำสั่งใหม่
@@ -481,7 +481,7 @@ function Badge({
   icon?: React.ReactNode;
 }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-md bg-violet-50 border border-violet-200 px-2 py-0.5 text-[11px] font-medium text-violet-800">
+    <span className="inline-flex items-center gap-1 rounded-md bg-[#1e3a5f]/5 border border-[#1e3a5f]/20 px-2 py-0.5 text-[11px] font-medium text-[#1e3a5f]">
       {icon}
       {children}
     </span>
