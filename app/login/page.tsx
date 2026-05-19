@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { signIn } from "next-auth/react";
 import { Lock, Mail, Eye, EyeOff, ShieldCheck, AlertCircle } from "lucide-react";
 
 const DEMO_ACCOUNTS = [
@@ -13,7 +13,18 @@ const DEMO_ACCOUNTS = [
 ];
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-50" />}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("from") || "/dashboard";
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -26,21 +37,25 @@ export default function LoginPage() {
     setError("");
     setIsSubmitting(true);
 
-    // TODO: Day 1.2 — wire to Auth.js
-    // ตอนนี้ mock: ถ้า email มี @eop.test และ password = demo1234 → pass
-    await new Promise((r) => setTimeout(r, 600));
+    const result = await signIn("credentials", {
+      email,
+      password,
+      redirect: false,
+    });
 
-    const validDemo = DEMO_ACCOUNTS.find(
-      (a) => a.email === email && password === a.password
-    );
-
-    if (validDemo) {
-      // Mock success — redirect ไป dashboard
-      router.push("/dashboard");
-    } else {
-      setError("อีเมลหรือรหัสผ่านไม่ถูกต้อง (ใช้ demo account ด้านขวา)");
+    if (result?.error) {
+      setError("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
+      setIsSubmitting(false);
+      return;
     }
 
+    if (result?.ok) {
+      router.push(redirectTo);
+      router.refresh();
+      return;
+    }
+
+    setError("เกิดข้อผิดพลาดในการเข้าสู่ระบบ");
     setIsSubmitting(false);
   }
 

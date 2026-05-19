@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Noto_Sans_Thai } from "next/font/google";
+import { AuthSessionProvider } from "@/components/session-provider";
 import "./globals.css";
 
 const notoThai = Noto_Sans_Thai({
@@ -25,7 +26,7 @@ export default function RootLayout({
       className={`${notoThai.variable} h-full antialiased`}
     >
       <body className="min-h-full bg-slate-50 text-slate-900 font-[var(--font-thai)]">
-        {children}
+        <AuthSessionProvider>{children}</AuthSessionProvider>
       </body>
     </html>
   );
