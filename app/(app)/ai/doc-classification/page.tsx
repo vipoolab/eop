@@ -1,23 +1,28 @@
-import { PlaceholderPage } from "@/components/placeholder-page";
+// AI Document Classification — TOR 5.4.6 PoC #2
 
-export default function DocClassificationPage() {
+import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
+import { PageHeader } from "@/components/page-header";
+import { ClassifyForm } from "./classify-form";
+import { FolderTree } from "lucide-react";
+
+export const dynamic = "force-dynamic";
+
+export default async function DocClassificationPage() {
+  const session = await auth();
+  if (!session?.user) redirect("/login");
+
   return (
-    <PlaceholderPage
-      title="AI Document Classification"
-      system="Data & AI"
-      description="AI จำแนกเอกสาร 6 หมวด (ยศ. / ผบ. / มค. / มข. / วจ. / อจ.สยศ.ตร.)"
-      pocNumber={2}
-      live
-      features={[
-        "อัปโหลดไฟล์ DOCX / PDF / XLSX / JPG / PNG (5 รูปแบบ)",
-        "Zero-shot classification ด้วย Claude API",
-        "ความแม่นยำเป้าหมาย ≥ 85%",
-        "6 หมวดงาน: กองยุทธศาสตร์ / กองแผนงานอำนวยการ / กองแผนงานความมั่นคง / กองแผนงานกิจการพิเศษ / กองวิจัย / ฝ่ายอำนวยการ",
-        "Document Preview เทียบกับ AI extract",
-        "Edit + ปรับปรุงข้อความที่สกัดได้",
-      ]}
-      status="in-progress"
-      scheduledDay={4}
-    />
+    <div className="space-y-6 max-w-6xl mx-auto">
+      <PageHeader
+        icon={FolderTree}
+        eyebrow="Data & AI · Document Classification"
+        title="AI จำแนกเอกสาร"
+        description="อัปโหลดเอกสาร (DOCX / XLSX / PDF / JPG / PNG / TXT) → AI จะจำแนกหน่วยงานเจ้าของเรื่องอัตโนมัติ"
+        live
+      />
+
+      <ClassifyForm />
+    </div>
   );
 }
