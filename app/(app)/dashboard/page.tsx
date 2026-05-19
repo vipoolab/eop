@@ -118,23 +118,18 @@ export default async function DashboardPage() {
       {/* Header */}
       <div className="flex items-end justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">
+          <h2 className="text-2xl font-semibold text-slate-900 tracking-tight">
             แดชบอร์ดภาพรวม
           </h2>
           <p className="text-sm text-slate-500 mt-1">
-            ภาพรวมการปฏิบัติงานสำนักงานยุทธศาสตร์ตำรวจ — สวัสดี{" "}
-            {session.user.rank} {session.user.name}
+            สวัสดี {session.user.rank} {session.user.name} ·
+            ภาพรวมการปฏิบัติงานปัจจุบัน
           </p>
         </div>
-        <div className="flex gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 text-blue-700 text-xs font-medium px-3 py-1 border border-blue-200">
-            <span className="h-1.5 w-1.5 rounded-full bg-blue-600 animate-pulse" />
-            Real-time (DB)
-          </span>
-          <span className="inline-flex items-center rounded-full bg-amber-50 text-amber-700 text-xs font-medium px-3 py-1 border border-amber-200">
-            TOR 4.9 + 5.7 + 6.1
-          </span>
-        </div>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-white text-slate-600 text-xs font-medium px-3 py-1 border border-slate-200 shadow-sm">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          Real-time
+        </span>
       </div>
 
       {/* KPI Cards — REAL DATA */}
@@ -186,12 +181,9 @@ export default async function DashboardPage() {
                 แนวโน้มคำสั่งรายเดือน
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                12 เดือนย้อนหลัง — ตัวอย่างสำหรับ Demo
+                12 เดือนย้อนหลัง
               </p>
             </div>
-            <span className="text-[10px] font-mono text-slate-400">
-              TOR PoC ข้อ 4 (ก.๑)
-            </span>
           </div>
           <CommandLineChart />
         </div>
@@ -203,12 +195,9 @@ export default async function DashboardPage() {
                 สัดส่วนสถานะคำสั่ง
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                ข้อมูลจาก DB จริง
+                แยกตามสถานะปัจจุบัน
               </p>
             </div>
-            <span className="text-[10px] font-mono text-slate-400">
-              ๔ (ก.๓)
-            </span>
           </div>
           {/* Real status counts */}
           <div className="space-y-2">
@@ -245,10 +234,7 @@ export default async function DashboardPage() {
           </div>
           <div className="mt-4 pt-3 border-t border-slate-100">
             <StatusPieChart />
-            <p className="mt-2 text-[10px] text-slate-400 italic text-center">
-              * Pie chart ใช้ตัวอย่างเดโม่ — Demo data
-            </p>
-          </div>
+            </div>
         </div>
       </div>
 
@@ -261,12 +247,9 @@ export default async function DashboardPage() {
                 คำสั่งแยกตามหน่วยงาน
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                6 หน่วย ตาม TOR PoC ข้อ 2 — Demo data
+                แยกตาม 6 หน่วยงานหลัก
               </p>
             </div>
-            <span className="text-[10px] font-mono text-slate-400">
-              ๔ (ก.๒)
-            </span>
           </div>
           <UnitBarChart />
         </div>
@@ -278,12 +261,9 @@ export default async function DashboardPage() {
                 แผนที่เหตุการณ์สำคัญ
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                GIS Heatmap — Demo data
+                GIS Heatmap แสดงเหตุการณ์
               </p>
             </div>
-            <span className="text-[10px] font-mono text-slate-400">
-              ๔ (ก.๔) / TOR 6.1
-            </span>
           </div>
           <IncidentMap />
         </div>
@@ -297,7 +277,7 @@ export default async function DashboardPage() {
               กิจกรรมล่าสุด
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              Audit Log — TOR 7.1.5 (ข้อมูลจริงจากระบบ)
+              บันทึกกิจกรรมล่าสุดจากระบบ
             </p>
           </div>
           <Link

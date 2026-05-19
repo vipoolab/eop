@@ -72,7 +72,7 @@ function LoginForm() {
         <div className="w-full max-w-md">
           {/* Logo */}
           <div className="flex items-center gap-3 mb-8">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-700 text-white font-bold">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-900 text-white font-bold tracking-tight">
               EOP
             </div>
             <div>
@@ -111,7 +111,7 @@ function LoginForm() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full rounded-lg border border-slate-200 bg-white pl-10 pr-3 py-2.5 text-sm placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  className="w-full rounded-lg border border-slate-200 bg-white pl-10 pr-3 py-2.5 text-sm placeholder:text-slate-400 focus:outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-200 transition-shadow"
                   placeholder="commander@eop.test"
                   autoComplete="email"
                 />
@@ -134,7 +134,7 @@ function LoginForm() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full rounded-lg border border-slate-200 bg-white pl-10 pr-10 py-2.5 text-sm placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  className="w-full rounded-lg border border-slate-200 bg-white pl-10 pr-10 py-2.5 text-sm placeholder:text-slate-400 focus:outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-200 transition-shadow"
                   placeholder="••••••••"
                   autoComplete="current-password"
                 />
@@ -155,7 +155,7 @@ function LoginForm() {
             {/* MFA notice */}
             <div className="flex items-center gap-2 text-xs text-slate-500">
               <ShieldCheck className="h-3.5 w-3.5" />
-              <span>ระบบสนับสนุน MFA (Multi-Factor Authentication) — TOR 7.1.2</span>
+              <span>ระบบสนับสนุน Multi-Factor Authentication (MFA)</span>
             </div>
 
             {/* Forgot password */}
@@ -169,7 +169,7 @@ function LoginForm() {
               </label>
               <button
                 type="button"
-                className="text-sm text-blue-700 hover:underline"
+                className="text-sm text-slate-700 hover:text-slate-900 hover:underline"
               >
                 ลืมรหัสผ่าน?
               </button>
@@ -187,7 +187,7 @@ function LoginForm() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full rounded-lg bg-blue-700 text-white py-2.5 text-sm font-medium hover:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full rounded-lg bg-slate-900 text-white py-2.5 text-sm font-medium hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
             >
               {isSubmitting ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
             </button>
@@ -196,44 +196,56 @@ function LoginForm() {
           {/* Footer */}
           <div className="mt-8 text-center text-xs text-slate-400">
             <p>© พ.ศ. 2569 สำนักงานยุทธศาสตร์ตำรวจ</p>
-            <p className="mt-1">
-              Phase 1 MVP — Pre-PoC Demo •{" "}
-              <span className="text-blue-600">ครอบคลุม TOR ทุกข้อ</span>
-            </p>
+            <p className="mt-1">Enterprise Operation Planning System</p>
           </div>
         </div>
       </div>
 
-      {/* Right side — Demo accounts + Info */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 items-center justify-center p-8 relative overflow-hidden">
-        {/* Decorative pattern */}
+      {/* Right side — Brand panel */}
+      <div className="hidden lg:flex lg:w-1/2 bg-slate-900 items-center justify-center p-8 relative overflow-hidden">
+        {/* Subtle grid pattern */}
         <div
-          className="absolute inset-0 opacity-10"
+          className="absolute inset-0 opacity-[0.04]"
           style={{
-            backgroundImage: `radial-gradient(circle at 1px 1px, white 1px, transparent 0)`,
-            backgroundSize: "20px 20px",
+            backgroundImage: `linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px)`,
+            backgroundSize: "48px 48px",
+          }}
+        />
+        {/* Subtle radial glow */}
+        <div
+          className="absolute inset-0 opacity-30"
+          style={{
+            background:
+              "radial-gradient(ellipse at top right, rgba(99,102,241,0.25), transparent 60%)",
           }}
         />
 
         <div className="relative max-w-md text-white">
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold leading-tight mb-3">
-              Digital Strategic Hub
+          <div className="mb-10">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-slate-300 mb-5">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              Pre-PoC Demo · Phase 1 MVP
+            </div>
+            <h2 className="text-3xl font-semibold leading-tight mb-3 tracking-tight">
+              Strategic Operations,
+              <br />
+              unified at scale.
             </h2>
-            <p className="text-blue-100 text-sm leading-relaxed">
-              ระบบบูรณาการการวางแผนยุทธศาสตร์เข้ากับการปฏิบัติการ
-              ของสำนักงานตำรวจแห่งชาติ ครอบคลุม{" "}
-              <strong>7 ระบบหลัก</strong> + AI + Big Data + XR Command Center
+            <p className="text-slate-400 text-sm leading-relaxed">
+              ระบบบูรณาการการวางแผนยุทธศาสตร์เข้ากับการปฏิบัติการของสำนักงานตำรวจแห่งชาติ
+              — ครอบคลุม 7 ระบบหลัก พร้อม AI, Big Data และ XR Command Center
             </p>
           </div>
 
           {/* Demo accounts */}
-          <div className="rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 p-5">
+          <div className="rounded-xl border border-white/10 bg-white/[0.03] backdrop-blur-sm p-5">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold">🔑 Demo Accounts</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-300">
+                Demo Accounts
+              </h3>
               <button
                 onClick={() => setShowDemo((v) => !v)}
-                className="text-xs text-blue-200 hover:text-white"
+                className="text-xs text-slate-400 hover:text-white transition-colors"
               >
                 {showDemo ? "ซ่อน" : "แสดง"}
               </button>
@@ -241,28 +253,31 @@ function LoginForm() {
 
             {showDemo && (
               <>
-                <p className="text-xs text-blue-200 mb-3">
-                  คลิกบัญชีเพื่อกรอกอัตโนมัติ — รหัสผ่าน: <code className="bg-white/20 px-1.5 py-0.5 rounded">demo1234</code>
+                <p className="text-xs text-slate-400 mb-3">
+                  คลิกบัญชีเพื่อกรอกอัตโนมัติ · รหัสผ่าน{" "}
+                  <code className="bg-white/10 text-white px-1.5 py-0.5 rounded font-mono">
+                    demo1234
+                  </code>
                 </p>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   {DEMO_ACCOUNTS.map((acc) => (
                     <button
                       key={acc.email}
                       type="button"
                       onClick={() => fillDemoAccount(acc.email)}
-                      className="w-full text-left rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 p-3 transition-colors group"
+                      className="w-full text-left rounded-lg bg-white/[0.02] hover:bg-white/[0.06] border border-white/5 hover:border-white/15 p-3 transition-all group"
                     >
                       <div className="flex items-center justify-between">
-                        <div>
-                          <div className="text-sm font-medium font-mono">
+                        <div className="min-w-0">
+                          <div className="text-[13px] font-medium font-mono truncate">
                             {acc.email}
                           </div>
-                          <div className="text-xs text-blue-200 mt-0.5">
+                          <div className="text-[11px] text-slate-400 mt-0.5">
                             {acc.role}
                           </div>
                         </div>
-                        <span className="text-xs text-blue-200 opacity-0 group-hover:opacity-100">
-                          คลิก →
+                        <span className="text-xs text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                          →
                         </span>
                       </div>
                     </button>
@@ -273,19 +288,24 @@ function LoginForm() {
           </div>
 
           {/* Key features */}
-          <div className="mt-6 space-y-2 text-sm text-blue-100">
-            <div className="flex items-center gap-2">
-              <span className="text-blue-300">●</span>
-              <span>7 ระบบครบตาม TOR (Strategic → Security)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-blue-300">●</span>
-              <span>4 PoC ฟีเจอร์ — AI Command / Doc Class / OCR / XR</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-blue-300">●</span>
-              <span>Zero Trust + RBAC + Audit Trail (CII compliant)</span>
-            </div>
+          <div className="mt-8 grid grid-cols-3 gap-3">
+            {[
+              { value: "7", label: "ระบบหลัก" },
+              { value: "20+", label: "Screens" },
+              { value: "AI", label: "Powered" },
+            ].map((s) => (
+              <div
+                key={s.label}
+                className="rounded-lg border border-white/10 bg-white/[0.02] p-3 text-center"
+              >
+                <div className="text-lg font-semibold text-white">
+                  {s.value}
+                </div>
+                <div className="text-[10px] uppercase tracking-wider text-slate-400 mt-0.5">
+                  {s.label}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

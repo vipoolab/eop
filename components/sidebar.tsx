@@ -1,8 +1,11 @@
 "use client";
 
+// Sidebar — enterprise/clean design
+// Note: TOR clause refs are kept in nav-config.ts source for traceability,
+// but intentionally NOT rendered in the UI for a polished look.
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { navSections } from "@/lib/nav-config";
 
@@ -10,38 +13,37 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-72 shrink-0 border-r border-slate-200 bg-white flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="flex h-16 items-center gap-3 border-b border-slate-200 px-6 shrink-0">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-700 text-white font-bold text-sm">
+    <aside className="w-64 shrink-0 border-r border-slate-200 bg-white flex flex-col overflow-hidden">
+      {/* Brand */}
+      <div className="flex h-16 items-center gap-3 border-b border-slate-200 px-5 shrink-0">
+        <div className="flex h-9 w-9 items-center justify-center rounded-md bg-slate-900 text-white font-semibold text-[13px] tracking-tight">
           EOP
         </div>
-        <div>
-          <div className="text-sm font-semibold leading-tight">สยศ.ตร.</div>
-          <div className="text-xs text-slate-500">Strategic Hub Demo</div>
+        <div className="min-w-0">
+          <div className="text-sm font-semibold leading-tight text-slate-900">
+            สำนักงานยุทธศาสตร์ตำรวจ
+          </div>
+          <div className="text-[11px] text-slate-500">
+            Enterprise Operation Planning
+          </div>
         </div>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto px-3 py-3">
+      <nav className="flex-1 overflow-y-auto px-3 py-4">
         {navSections.map((section, idx) => (
-          <div key={idx} className="mb-4">
-            {/* Section header */}
+          <div key={idx} className="mb-5 last:mb-0">
+            {/* Section header — only show for non-Home sections */}
             {section.label !== "หน้าหลัก" && (
-              <div className="flex items-center justify-between px-3 mb-1.5 mt-2">
-                <h3 className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                  {section.label}
+              <div className="px-3 mb-1.5">
+                <h3 className="text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400">
+                  {section.label.replace(/^ระบบ \d+:\s*/, "")}
                 </h3>
-                {section.torRef && (
-                  <span className="text-[9px] font-mono text-slate-300">
-                    {section.torRef}
-                  </span>
-                )}
               </div>
             )}
 
             {/* Section items */}
-            <div className="space-y-0.5">
+            <div className="space-y-px">
               {section.items.map((item) => {
                 const isActive = pathname === item.href;
                 const Icon = item.icon;
@@ -50,36 +52,32 @@ export function Sidebar() {
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      "flex items-start gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors group relative",
+                      "group flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors",
                       isActive
-                        ? "bg-blue-50 text-blue-700"
-                        : "text-slate-700 hover:bg-slate-50"
+                        ? "bg-slate-900 text-white"
+                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                     )}
                   >
                     <Icon
                       className={cn(
-                        "h-4 w-4 mt-0.5 shrink-0",
+                        "h-4 w-4 shrink-0",
                         isActive
-                          ? "text-blue-700"
+                          ? "text-white"
                           : "text-slate-400 group-hover:text-slate-600"
                       )}
                     />
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium truncate text-xs leading-tight flex items-center gap-1">
-                        {item.label}
-                        {item.live && (
-                          <Sparkles className="h-3 w-3 text-amber-500 shrink-0" />
+                    <span className="flex-1 truncate font-medium">
+                      {item.label}
+                    </span>
+                    {item.live && (
+                      <span
+                        className={cn(
+                          "h-1.5 w-1.5 rounded-full shrink-0",
+                          isActive ? "bg-emerald-300" : "bg-emerald-500"
                         )}
-                      </div>
-                      <div className="text-[10px] text-slate-400 mt-0.5 truncate">
-                        TOR {item.torRef}
-                        {item.poc && (
-                          <span className="ml-1 text-amber-600 font-semibold">
-                            • PoC {item.poc}
-                          </span>
-                        )}
-                      </div>
-                    </div>
+                        title="Live AI"
+                      />
+                    )}
                   </Link>
                 );
               })}
@@ -89,11 +87,11 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="mx-3 mb-3 rounded-lg border border-blue-100 bg-blue-50 p-3 shrink-0">
-        <div className="text-xs font-medium text-blue-900">Phase 1 MVP</div>
-        <p className="text-[10px] text-blue-700 mt-0.5 leading-snug">
-          ต้นแบบจริง — ครอบคลุม TOR ทุกข้อ ⭐ = Live AI / PoC = ทดสอบจริง
-        </p>
+      <div className="border-t border-slate-200 px-5 py-3 shrink-0">
+        <div className="flex items-center gap-2 text-[11px] text-slate-400">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+          <span>System online · v0.1</span>
+        </div>
       </div>
     </aside>
   );

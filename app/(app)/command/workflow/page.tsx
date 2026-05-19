@@ -5,7 +5,7 @@ import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { TorBanner } from "@/components/tor-banner";
+import { PageHeader } from "@/components/page-header";
 import {
   STATUS_LABELS,
   STATUS_COLORS,
@@ -15,7 +15,7 @@ import {
   type CommandStatus,
   type CommandPriority,
 } from "@/features/commands/types";
-import { Plus, FileText, Clock, Users } from "lucide-react";
+import { Plus, FileText, Clock, Users, Workflow } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -54,31 +54,21 @@ export default async function CommandWorkflowPage() {
 
   return (
     <div className="space-y-6">
-      <TorBanner
-        torRefs={["5.4.4", "4.1", "4.3", "4.5", "4.7"]}
-        system="ระบบ 4: Command & Operation"
-        description="วงจรคำสั่ง 9 สถานะ (TOR 4.1) — Kanban view + Read Receipt + Auto-Escalation"
+      <PageHeader
+        icon={Workflow}
+        eyebrow="Command & Operation"
+        title="วงจรคำสั่ง"
+        description={`ทั้งหมด ${totals.total} คำสั่ง · กำลังดำเนินการ ${totals.active} · ปิดแล้ว ${totals.closed}`}
+        actions={
+          <Link
+            href="/command/workflow/new"
+            className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 transition-colors shadow-sm"
+          >
+            <Plus className="h-4 w-4" />
+            สร้างคำสั่งใหม่
+          </Link>
+        }
       />
-
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">
-            วงจรคำสั่ง (Command Workflow)
-          </h1>
-          <p className="text-sm text-slate-600 mt-1">
-            ทั้งหมด {totals.total} คำสั่ง • กำลังดำเนินการ {totals.active} •
-            ปิดแล้ว {totals.closed}
-          </p>
-        </div>
-        <Link
-          href="/command/workflow/new"
-          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
-        >
-          <Plus className="h-4 w-4" />
-          สร้างคำสั่งใหม่
-        </Link>
-      </div>
 
       {/* Kanban Board */}
       <div className="overflow-x-auto pb-4">
@@ -174,8 +164,8 @@ export default async function CommandWorkflowPage() {
 
       {/* Legend */}
       <div className="rounded-xl border border-slate-200 bg-white p-4">
-        <h3 className="text-xs font-semibold text-slate-700 mb-2">
-          คำอธิบาย 9 สถานะ (TOR 4.1)
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">
+          ลำดับ 9 สถานะของคำสั่ง
         </h3>
         <div className="grid grid-cols-3 md:grid-cols-9 gap-2 text-[11px]">
           {STATUS_ORDER.map((s, i) => (

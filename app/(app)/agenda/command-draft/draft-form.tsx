@@ -237,7 +237,7 @@ export function CommandDraftForm() {
         {/* Presets */}
         <div className="mb-4">
           <p className="text-xs text-slate-500 mb-2">
-            🎯 ตัวอย่าง (TOR 2.2.2 — 4 กรณี):
+            เริ่มจากตัวอย่าง:
           </p>
           <div className="grid grid-cols-2 gap-2">
             {PRESETS.map((p) => (

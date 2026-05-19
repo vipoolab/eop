@@ -6,7 +6,7 @@ import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { findCommandById } from "@/features/commands/repository";
 import { getAvailableTransitions } from "@/features/commands/workflow";
-import { TorBanner } from "@/components/tor-banner";
+import { PageHeader } from "@/components/page-header";
 import {
   STATUS_LABELS,
   STATUS_COLORS,
@@ -49,20 +49,20 @@ export default async function CommandDetailPage({
 
   return (
     <div className="space-y-6">
-      <TorBanner
-        torRefs={["5.4.4", "4.1", "4.3"]}
-        system="ระบบ 4: Command & Operation"
-        description="รายละเอียดคำสั่ง + วงจรสถานะ + Read Receipt"
-      />
-
       {/* Back link */}
       <Link
         href="/command/workflow"
-        className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline"
+        className="inline-flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900 transition-colors"
       >
         <ArrowLeft className="h-4 w-4" />
         กลับไปยัง Kanban
       </Link>
+
+      <PageHeader
+        eyebrow="Command Detail"
+        title="รายละเอียดคำสั่ง"
+        description="ข้อมูลคำสั่ง · หน่วยรับ · ประวัติการเปลี่ยนสถานะ"
+      />
 
       {/* Header card */}
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">

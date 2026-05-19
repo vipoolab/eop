@@ -20,7 +20,6 @@ import {
   Users,
   Network,
   Smartphone,
-  GitBranch,
 } from "lucide-react";
 
 export interface NavItem {
@@ -239,18 +238,6 @@ export const navSections: NavSection[] = [
         icon: Smartphone,
         torRef: "8.1",
         description: "Responsive + Mobile App (iOS/Android)",
-      },
-    ],
-  },
-  {
-    label: "Meta",
-    items: [
-      {
-        label: "TOR Coverage Matrix",
-        href: "/tor-matrix",
-        icon: GitBranch,
-        torRef: "All",
-        description: "Map ทุก TOR clause กับ web app screens — Transparency",
       },
     ],
   },

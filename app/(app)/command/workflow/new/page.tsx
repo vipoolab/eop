@@ -5,9 +5,9 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { TorBanner } from "@/components/tor-banner";
+import { PageHeader } from "@/components/page-header";
 import { NewCommandForm } from "./new-command-form";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, FilePlus2 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -41,28 +41,22 @@ export default async function NewCommandPage() {
 
   return (
     <div className="space-y-6">
-      <TorBanner
-        torRefs={["5.4.4", "4.1", "4.5"]}
-        system="ระบบ 4: Command & Operation"
-        description="สร้างคำสั่งใหม่ — ระบุเนื้อหา + หน่วยรับ + ลำดับความสำคัญ (สถานะเริ่มต้น: ร่าง)"
-      />
-
       <Link
         href="/command/workflow"
-        className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline"
+        className="inline-flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900 transition-colors"
       >
         <ArrowLeft className="h-4 w-4" />
         กลับไปยัง Kanban
       </Link>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h1 className="text-xl font-bold text-slate-900 mb-1">
-          สร้างคำสั่งใหม่
-        </h1>
-        <p className="text-sm text-slate-600 mb-6">
-          ระบบจะสร้างเลขที่เอกสารอัตโนมัติ (ตร ๐๐๐๑.๖๙/xxxx)
-        </p>
+      <PageHeader
+        icon={FilePlus2}
+        eyebrow="New Command"
+        title="สร้างคำสั่งใหม่"
+        description="ระบุเนื้อหาคำสั่ง · หน่วยรับ · ลำดับความสำคัญ — ระบบจะสร้างเลขที่เอกสารอัตโนมัติ"
+      />
 
+      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <NewCommandForm units={units} missions={missions} />
       </div>
     </div>
