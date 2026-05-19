@@ -1,23 +1,28 @@
-import { PlaceholderPage } from "@/components/placeholder-page";
+// OCR Demo Page — TOR 5.4.6 / 6.10.3(ค) PoC #3
 
-export default function OcrPage() {
+import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
+import { PageHeader } from "@/components/page-header";
+import { OcrForm } from "./ocr-form";
+import { ScanText } from "lucide-react";
+
+export const dynamic = "force-dynamic";
+
+export default async function OcrPage() {
+  const session = await auth();
+  if (!session?.user) redirect("/login");
+
   return (
-    <PlaceholderPage
-      title="OCR ภาษาไทย"
-      system="ระบบ 6: Data & AI Management — PoC 3"
-      torRefs={["5.4.6", "6.10.3"]}
-      description="OCR ดึงข้อความจาก PDF ภาษาไทย — PoC 3 (10 คะแนน)"
-      pocNumber={3}
-      live
-      features={[
-        "Input: PDF ≥ 300 dpi, ตัวอักษร ≥ 10 point",
-        "OCR Pipeline: Claude Vision หรือ PaddleOCR",
-        "คำนวณ CER (Character Error Rate)",
-        "CER ≤ 10% = 10 pt / 10-20% = 5 pt / 20-30% = 2.5 pt / > 30% = 0",
-        "Side-by-side: ภาพต้นฉบับ + ข้อความที่ดึง",
-      ]}
-      status="in-progress"
-      scheduledDay={5}
-    />
+    <div className="space-y-6 max-w-6xl mx-auto">
+      <PageHeader
+        icon={ScanText}
+        eyebrow="Data & AI · OCR"
+        title="OCR ภาษาไทย — สกัดข้อความจากภาพ"
+        description="อัปโหลดภาพเอกสาร (JPG / PNG) → AI อ่านและสกัดข้อความออกมาให้ตรวจสอบ/แก้ไข"
+        live
+      />
+
+      <OcrForm />
+    </div>
   );
 }
