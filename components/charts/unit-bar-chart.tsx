@@ -35,10 +35,10 @@ export function UnitBarChart() {
             borderRadius: 8,
             border: "1px solid #e2e8f0",
           }}
-          formatter={(value: number, _name, props) => [
-            value,
-            props.payload.name,
-          ]}
+          formatter={(value, _name, item) => {
+            const payload = (item as { payload?: { name?: string } })?.payload;
+            return [String(value), payload?.name ?? ""];
+          }}
         />
         <Bar dataKey="count" radius={[6, 6, 0, 0]}>
           {commandsByUnit.map((entry, i) => (
