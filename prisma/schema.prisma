@@ -1,0 +1,387 @@
+// EOP — Enterprise Operation Planning
+// Database schema for สำนักงานยุทธศาสตร์ตำรวจ (สยศ.ตร.)
+// Maps to TOR clauses 5.4.1 - 5.4.7
+
+generator client {
+  provider      = "prisma-client-js"
+  output        = "../lib/generated/prisma"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// AUTH & USERS (TOR 7.1)
+// ─────────────────────────────────────────────
+
+enum UserRole {
+  ADMIN
+  COMMANDER // ผู้บังคับบัญชา — สั่งการ + อนุมัติ
+  STAFF // เจ้าหน้าที่ — ปฏิบัติงาน
+  AUDITOR // ตรวจสอบ
+  VIEWER // อ่านอย่างเดียว
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  rank         String? // ยศ เช่น พล.ต.ต. / พ.ต.อ.
+  passwordHash String
+  unitId       String?
+  unit         Unit?    @relation(fields: [unitId], references: [id])
+  role         UserRole @default(STAFF)
+  mfaEnabled   Boolean  @default(false)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  commandsCreated Command[]       @relation("CommandCreator")
+  commandsSigned  Command[]       @relation("CommandSigner")
+  acks            CommandTarget[]
+  auditLogs       AuditLog[]
+  missions        Mission[]
+  documents       Document[]
+  ocrJobs         OcrJob[]
+  sessions        Session[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expires   DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// ─────────────────────────────────────────────
+// ORGANIZATION
+// ─────────────────────────────────────────────
+
+model Unit {
+  id          String  @id @default(cuid())
+  code        String  @unique // ยศ./ผบ./มค./มข./วจ./อจ.
+  name        String
+  description String?
+  parentId    String?
+  parent      Unit?   @relation("UnitHierarchy", fields: [parentId], references: [id])
+  children    Unit[]  @relation("UnitHierarchy")
+
+  users          User[]
+  missions       Mission[]
+  commandTargets CommandTarget[]
+  documents      Document[]
+}
+
+// ─────────────────────────────────────────────
+// STRATEGIC PLAN (TOR 5.4.1)
+// ─────────────────────────────────────────────
+
+enum PlanLevel {
+  NATIONAL // ยุทธศาสตร์ชาติ
+  MASTER // แผนแม่บท
+  ACTION // แผนปฏิบัติราชการ
+}
+
+model StrategicPlan {
+  id          String    @id @default(cuid())
+  level       PlanLevel
+  code        String // เช่น "Y20-1.2.3"
+  title       String
+  description String?
+  parentId    String?
+  parent      StrategicPlan?  @relation("PlanHierarchy", fields: [parentId], references: [id])
+  children    StrategicPlan[] @relation("PlanHierarchy")
+  startDate   DateTime?
+  endDate     DateTime?
+  createdAt   DateTime  @default(now())
+
+  kpis     Kpi[]
+  missions Mission[]
+}
+
+model Kpi {
+  id          String  @id @default(cuid())
+  planId      String
+  plan        StrategicPlan @relation(fields: [planId], references: [id])
+  code        String
+  name        String
+  description String?
+  target      Float
+  actual      Float   @default(0)
+  unit        String? // เช่น "ครั้ง" "%"
+  period      String? // เช่น "Q1/2568"
+  status      String? // green/yellow/red
+  updatedAt   DateTime @updatedAt
+}
+
+// ─────────────────────────────────────────────
+// AGENDA / MISSION (TOR 5.4.2 — ระบบ 2)
+// ─────────────────────────────────────────────
+
+enum MissionPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+  CRITICAL
+}
+
+model Mission {
+  id          String  @id @default(cuid())
+  code        String  @unique
+  title       String
+  description String?
+  ownerId     String?
+  owner       User?   @relation(fields: [ownerId], references: [id])
+  unitId      String?
+  unit        Unit?   @relation(fields: [unitId], references: [id])
+  planId      String?
+  plan        StrategicPlan? @relation(fields: [planId], references: [id])
+  priority    MissionPriority @default(NORMAL)
+  status      String  @default("active") // active / completed / cancelled
+  startDate   DateTime?
+  dueDate     DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  commands Command[]
+}
+
+// ─────────────────────────────────────────────
+// COMMAND / WORKFLOW (TOR 5.4.4 — ระบบ 4)
+// 9 statuses: draft → submitted → approved → published → acknowledged
+//          → in_progress → reported → audited → closed
+// ─────────────────────────────────────────────
+
+enum CommandStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  PUBLISHED
+  ACKNOWLEDGED
+  IN_PROGRESS
+  REPORTED
+  AUDITED
+  CLOSED
+}
+
+model Command {
+  id          String   @id @default(cuid())
+  docNo       String   @unique // เช่น "๐๓๒๑/๒๕๖๘"
+  subject     String
+  recipient   String // เรียน (หน่วยงาน/บุคคล)
+  reference   String? // อ้างถึง
+  objective   String? // วัตถุประสงค์
+  body        String   @db.Text // เนื้อหา
+  signature   String? // ลายเซ็น/ผู้ลงนาม name
+  status      CommandStatus @default(DRAFT)
+  priority    MissionPriority @default(NORMAL)
+  missionId   String?
+  mission     Mission? @relation(fields: [missionId], references: [id])
+  creatorId   String
+  creator     User     @relation("CommandCreator", fields: [creatorId], references: [id])
+  signerId    String?
+  signer      User?    @relation("CommandSigner", fields: [signerId], references: [id])
+  aiAssisted  Boolean  @default(false) // ระบุว่า AI ช่วยร่าง
+  aiPromptUsed String? @db.Text // เก็บ prompt ที่ใช้
+  publishedAt DateTime?
+  closedAt    DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  targets    CommandTarget[]
+  statusLog  CommandStatusLog[]
+
+  @@index([status])
+  @@index([creatorId])
+}
+
+model CommandTarget {
+  id           String   @id @default(cuid())
+  commandId    String
+  command      Command  @relation(fields: [commandId], references: [id], onDelete: Cascade)
+  unitId       String
+  unit         Unit     @relation(fields: [unitId], references: [id])
+  assignedUserId String?
+  assignedUser User?    @relation(fields: [assignedUserId], references: [id])
+  acknowledged Boolean  @default(false) // Read Receipt
+  acknowledgedAt DateTime?
+  completed    Boolean  @default(false)
+  completedAt  DateTime?
+  resultNote   String?  @db.Text
+
+  @@unique([commandId, unitId])
+}
+
+model CommandStatusLog {
+  id        String        @id @default(cuid())
+  commandId String
+  command   Command       @relation(fields: [commandId], references: [id], onDelete: Cascade)
+  from      CommandStatus?
+  to        CommandStatus
+  byUserId  String?
+  note      String?
+  createdAt DateTime      @default(now())
+}
+
+// ─────────────────────────────────────────────
+// COMPLIANCE (TOR 5.4.3 — ระบบ 3)
+// ─────────────────────────────────────────────
+
+enum ComplianceStandard {
+  GOR_POR_ROR // ก.พ.ร.
+  ITA
+  PMQA
+  CUSTOM
+}
+
+model ComplianceReport {
+  id          String              @id @default(cuid())
+  standard    ComplianceStandard
+  title       String
+  period      String // เช่น "Q4/2568"
+  unitId      String?
+  status      String  @default("draft") // draft / submitted / reviewed
+  score       Float?
+  data        Json? // นี้เก็บข้อมูล structured ของ form
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ─────────────────────────────────────────────
+// DYNAMIC FORM BUILDER (TOR 2.3)
+// ─────────────────────────────────────────────
+
+model FormTemplate {
+  id          String @id @default(cuid())
+  name        String
+  description String?
+  schema      Json // JSON schema ของ form fields
+  isActive    Boolean @default(true)
+  createdAt   DateTime @default(now())
+
+  submissions FormSubmission[]
+}
+
+model FormSubmission {
+  id         String   @id @default(cuid())
+  templateId String
+  template   FormTemplate @relation(fields: [templateId], references: [id])
+  data       Json
+  submittedBy String?
+  createdAt  DateTime @default(now())
+}
+
+// ─────────────────────────────────────────────
+// DOCUMENT MANAGEMENT (TOR 5.4.6 — ระบบ 6)
+// AI Document Processing + OCR
+// ─────────────────────────────────────────────
+
+model Document {
+  id              String   @id @default(cuid())
+  filename        String
+  originalName    String
+  mimeType        String
+  size            Int
+  storagePath     String
+  unitId          String?
+  unit            Unit?    @relation(fields: [unitId], references: [id])
+  uploadedBy      String?
+  uploader        User?    @relation(fields: [uploadedBy], references: [id])
+  classifiedUnit  String? // ผลจาก AI — code ของ Unit
+  classificationConfidence Float?
+  classificationAt DateTime?
+  contentText     String?  @db.Text // text extracted (จาก OCR หรือ direct)
+  createdAt       DateTime @default(now())
+
+  ocrJobs OcrJob[]
+
+  @@index([classifiedUnit])
+}
+
+model OcrJob {
+  id            String   @id @default(cuid())
+  documentId    String?
+  document      Document? @relation(fields: [documentId], references: [id])
+  inputPath     String
+  outputText    String?  @db.Text
+  groundTruth   String?  @db.Text // สำหรับ CER comparison
+  cer           Float? // Character Error Rate
+  pageCount     Int      @default(1)
+  status        String   @default("pending") // pending / processing / completed / failed
+  errorMessage  String?
+  startedAt     DateTime?
+  completedAt   DateTime?
+  processedBy   String?
+  user          User?    @relation(fields: [processedBy], references: [id])
+  createdAt     DateTime @default(now())
+}
+
+// ─────────────────────────────────────────────
+// SEARCH INDEX (TOR 8.10.12 — 4 modes)
+// ใช้ Postgres full-text + manual cosine similarity
+// (pgvector ต้องการ extension — ใส่หลัง)
+// ─────────────────────────────────────────────
+
+model SearchEntry {
+  id        String   @id @default(cuid())
+  refType   String // "command" | "mission" | "document" | "report"
+  refId     String
+  title     String
+  content   String   @db.Text
+  unitCode  String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([refType, refId])
+}
+
+// ─────────────────────────────────────────────
+// INCIDENT MANAGEMENT (TOR 6.4)
+// ─────────────────────────────────────────────
+
+model Incident {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  type        String // "ประท้วง" / "อาชญากรรม" / "อุบัติเหตุ" / "ฯลฯ"
+  title       String
+  description String?
+  lat         Float?
+  lng         Float?
+  location    String?
+  severity    Int      @default(5) // 1-10
+  status      String   @default("open") // open / investigating / closed
+  source      String? // "191" / "CCTV" / "intel" / "manual"
+  sourceRef   String?
+  occurredAt  DateTime
+  reportedAt  DateTime @default(now())
+  closedAt    DateTime?
+}
+
+// ─────────────────────────────────────────────
+// AUDIT LOG (TOR 7.1.5 / 7.2.4)
+// บันทึกทุกการกระทำ
+// ─────────────────────────────────────────────
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String // เช่น "command.create" / "auth.login" / "doc.upload"
+  target    String? // refType:refId
+  details   Json?
+  ip        String?
+  ua        String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
