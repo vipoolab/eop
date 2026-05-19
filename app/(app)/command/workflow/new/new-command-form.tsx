@@ -1,10 +1,11 @@
 "use client";
 
 // Create command form — POSTs to /api/commands
+// Accepts prefill from AI draft (via sessionStorage)
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Loader2, Sparkles } from "lucide-react";
 import {
   PRIORITY_LABELS,
   type CommandPriority,
@@ -38,8 +39,13 @@ export function NewCommandForm({
   missions: Mission[];
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromAi = searchParams.get("from") === "ai";
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [aiAssisted, setAiAssisted] = useState(false);
+  const [aiPromptUsed, setAiPromptUsed] = useState<unknown>(null);
 
   const [subject, setSubject] = useState("");
   const [recipient, setRecipient] = useState("");
@@ -49,6 +55,28 @@ export function NewCommandForm({
   const [priority, setPriority] = useState<CommandPriority>("NORMAL");
   const [missionId, setMissionId] = useState<string>("");
   const [targetUnitIds, setTargetUnitIds] = useState<string[]>([]);
+
+  // Load AI prefill from sessionStorage
+  useEffect(() => {
+    if (!fromAi) return;
+    const raw = sessionStorage.getItem("ai-draft-prefill");
+    if (!raw) return;
+    try {
+      const prefill = JSON.parse(raw);
+      setSubject(prefill.subject ?? "");
+      setRecipient(prefill.recipient ?? "");
+      setReference(prefill.reference ?? "");
+      setObjective(prefill.objective ?? "");
+      setBody(prefill.body ?? "");
+      setPriority(prefill.priority ?? "NORMAL");
+      setAiAssisted(true);
+      setAiPromptUsed(prefill.aiPromptUsed ?? null);
+      // Clear after loading so navigating back doesn't reload
+      sessionStorage.removeItem("ai-draft-prefill");
+    } catch {
+      /* ignore */
+    }
+  }, [fromAi]);
 
   function toggleUnit(id: string) {
     setTargetUnitIds((curr) =>
@@ -74,7 +102,11 @@ export function NewCommandForm({
           priority,
           missionId: missionId || undefined,
           targetUnitIds,
-          aiAssisted: false,
+          aiAssisted,
+          aiPromptUsed:
+            aiPromptUsed && typeof aiPromptUsed === "object"
+              ? JSON.stringify(aiPromptUsed)
+              : undefined,
         }),
       });
 
@@ -103,6 +135,16 @@ export function NewCommandForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      {aiAssisted && (
+        <div className="rounded-lg border border-violet-200 bg-violet-50 p-3 flex items-center gap-2">
+          <Sparkles className="h-4 w-4 text-violet-600" />
+          <p className="text-sm text-violet-800">
+            <span className="font-semibold">ร่างโดย AI</span> — ตรวจทาน
+            แก้ไข แล้วเลือกหน่วยรับก่อนบันทึก
+          </p>
+        </div>
+      )}
+
       {/* Subject */}
       <Field
         label="หัวเรื่อง *"

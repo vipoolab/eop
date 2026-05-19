@@ -10,12 +10,13 @@
 ## 🎯 Overall Progress
 
 ```
-Phase 1 MVP (7 วัน):  ████████████░░░░░░░░  60%
+Phase 1 MVP (7 วัน):  ████████████████░░░░  75%
 
-✅ Foundation:        ████████████████████  100%
+✅ Foundation:         ████████████████████ 100%
 ✅ Day 1 (Auth + Nav): ████████████████████ 100%
 ✅ Day 2 (Command):    ████████████████████ 100%
-⏳ Day 3-7:            ░░░░░░░░░░░░░░░░░░░░  0%
+✅ Day 3 (AI Draft):   ████████████████████ 100%
+⏳ Day 4-7:            ░░░░░░░░░░░░░░░░░░░░  0%
 ```
 
 ---
@@ -166,14 +167,19 @@ eop-demo/
 - [x] Dashboard ดึง **real data** จาก DB (totals, status breakdown, audit log)
 - [x] Seed 9 sample commands ครบ 9 สถานะ พร้อม Thai docNo (ตร ๐๐๐๑.๖๙/...)
 
-### ⏳ Day 3: AI Command Drafting (PoC 1)
-- [ ] **TODO:** User ให้ Anthropic API key
-- [ ] Setup Claude API client
-- [ ] System prompt + few-shot examples
-- [ ] API route `/api/ai/draft`
-- [ ] UI: ฟอร์ม 5 ช่อง + streaming response
-- [ ] Save draft → Command workflow
-- [ ] Cache result
+### ✅ Day 3: AI Command Drafting (PoC 1) — 100%
+- [x] User ให้ Anthropic API key
+- [x] ติดตั้ง `@anthropic-ai/sdk`
+- [x] สร้าง `lib/claude.ts` (lazy singleton + smart env resolution)
+- [x] สร้าง `features/ai/command-draft.ts` (Thai police system prompt)
+- [x] สร้าง `features/ai/validators.ts` (Zod schema)
+- [x] API route `POST /api/ai/draft` (with RBAC + audit log)
+- [x] UI: ฟอร์ม 5 ช่อง + ผลลัพธ์ side-by-side
+- [x] 4 Presets ตาม TOR 2.2.2 (ก่อเหตุ/ภัยพิบัติ/งานสำคัญพิเศษ/งานทั่วไป)
+- [x] Save draft → Command workflow (via sessionStorage prefill)
+- [x] Audit log บันทึก token usage + elapsed time
+- [x] Model: claude-haiku-4-5 (เร็ว + ราคาถูก สำหรับ demo)
+- [x] Test script `scripts/test-claude.ts` (end-to-end verify ผ่าน)
 
 ### ⏳ Day 4: Doc Classification (PoC 2)
 - [ ] Upload DOCX/PDF
@@ -267,3 +273,4 @@ Code:            ~5 KB (started)
 | 19 พ.ค. 2569 | Day 1.2: Supabase + Prisma 7 + adapter-pg + migrate + seed |
 | 19 พ.ค. 2569 | Day 1.3: Auth.js v5 + Login page + proxy.ts (Next 16) + audit log |
 | 19 พ.ค. 2569 | Day 2: Command CRUD + 9-state workflow + Kanban UI + Real Dashboard |
+| 20 พ.ค. 2569 | Day 3: AI Command Drafting (PoC 1) — Claude Haiku 4.5 + 4 presets |
