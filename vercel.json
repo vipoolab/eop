@@ -1,0 +1,16 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "buildCommand": "prisma generate && next build",
+  "installCommand": "npm install",
+  "regions": ["sin1"],
+  "functions": {
+    "app/api/ai/draft/route.ts": { "maxDuration": 60 },
+    "app/api/ai/classify/route.ts": { "maxDuration": 60 },
+    "app/api/ai/ocr/route.ts": { "maxDuration": 90 },
+    "app/api/search/route.ts": { "maxDuration": 30 }
+  },
+  "env": {
+    "NEXT_TELEMETRY_DISABLED": "1"
+  }
+}
