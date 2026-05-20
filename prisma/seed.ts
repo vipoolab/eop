@@ -221,47 +221,49 @@ async function main() {
   // ────────────────────────────────────────────
   console.log("Creating KPIs...");
 
-  const kpis = await Promise.all([
-    prisma.kpi.create({
-      data: {
-        planId: actionPlan.id,
-        code: "KPI-001",
-        name: "อัตราการจับกุมคดีอาญา",
-        description: "ร้อยละการจับกุมคดีอาญา 5 ประเภทหลัก",
-        target: 70.0,
-        actual: 58.3,
-        unit: "%",
-        period: "Q2/2569",
-        status: "yellow",
-      },
-    }),
-    prisma.kpi.create({
-      data: {
-        planId: actionPlan.id,
-        code: "KPI-002",
-        name: "ระยะเวลาประมวลผลคำสั่ง",
-        description: "ระยะเวลาเฉลี่ยจากการร่างถึงเผยแพร่ของหนังสือสั่งการ",
-        target: 1.0,
-        actual: 2.5,
-        unit: "วัน",
-        period: "Q2/2569",
-        status: "red",
-      },
-    }),
-    prisma.kpi.create({
-      data: {
-        planId: actionPlan.id,
-        code: "KPI-003",
-        name: "อัตราการรับทราบคำสั่ง",
-        description: "ร้อยละหน่วยงานที่รับทราบในเวลากำหนด",
-        target: 95.0,
-        actual: 87.5,
-        unit: "%",
-        period: "Q2/2569",
-        status: "yellow",
-      },
-    }),
-  ]);
+  // Idempotent: delete existing KPIs for this plan, then re-create
+  // (kpi.code is not unique in schema — using deleteMany+create combo)
+  await prisma.kpi.deleteMany({ where: { planId: actionPlan.id } });
+
+  const kpiData = [
+    {
+      planId: actionPlan.id,
+      code: "KPI-001",
+      name: "อัตราการจับกุมคดีอาญา",
+      description: "ร้อยละการจับกุมคดีอาญา 5 ประเภทหลัก",
+      target: 70.0,
+      actual: 58.3,
+      unit: "%",
+      period: "Q2/2569",
+      status: "yellow",
+    },
+    {
+      planId: actionPlan.id,
+      code: "KPI-002",
+      name: "ระยะเวลาประมวลผลคำสั่ง",
+      description: "ระยะเวลาเฉลี่ยจากการร่างถึงเผยแพร่ของหนังสือสั่งการ",
+      target: 1.0,
+      actual: 2.5,
+      unit: "วัน",
+      period: "Q2/2569",
+      status: "red",
+    },
+    {
+      planId: actionPlan.id,
+      code: "KPI-003",
+      name: "อัตราการรับทราบคำสั่ง",
+      description: "ร้อยละหน่วยงานที่รับทราบในเวลากำหนด",
+      target: 95.0,
+      actual: 87.5,
+      unit: "%",
+      period: "Q2/2569",
+      status: "yellow",
+    },
+  ];
+
+  const kpis = await Promise.all(
+    kpiData.map((data) => prisma.kpi.create({ data }))
+  );
 
   console.log(`  ✓ Created ${kpis.length} KPIs`);
 
