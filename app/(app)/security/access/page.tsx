@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/page-header";
 import { Users, Shield, KeyRound, ShieldCheck } from "lucide-react";
+import { UserActions, UserToggle } from "./user-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -63,6 +64,11 @@ export default async function AccessPage() {
         eyebrow="Security & Compliance"
         title="ผู้ใช้และการจัดการสิทธิ์"
         description="Role-Based Access Control (RBAC) + Multi-Factor Authentication (MFA) + Single Sign-On (SSO)"
+        actions={
+          session.user.role === "ADMIN" ? (
+            <UserActions units={units} />
+          ) : null
+        }
       />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -156,10 +162,7 @@ export default async function AccessPage() {
                     )}
                   </td>
                   <td className="px-5 py-3 text-center">
-                    <span className={`inline-flex items-center gap-1 text-[11px] font-medium ${u.active ? "text-emerald-700" : "text-slate-400"}`}>
-                      <span className={`h-1.5 w-1.5 rounded-full ${u.active ? "bg-emerald-500" : "bg-slate-300"}`} />
-                      {u.active ? "ใช้งานได้" : "ปิดใช้งาน"}
-                    </span>
+                    <UserToggle id={u.id} active={u.active} role={session.user.role} />
                   </td>
                 </tr>
               );

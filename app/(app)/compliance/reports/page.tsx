@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   Clock,
   AlertCircle,
+  Download,
 } from "lucide-react";
 
 const REPORTS = [
@@ -160,10 +161,21 @@ export default function ComplianceReportsPage() {
                     </span>
                   </div>
                 </div>
-                <div className="text-right shrink-0">
-                  <div className="font-mono text-xl font-semibold text-slate-900 tabular-nums">
-                    {r.progress}%
+                <div className="text-right shrink-0 flex items-start gap-3">
+                  <div>
+                    <div className="font-mono text-xl font-semibold text-slate-900 tabular-nums">
+                      {r.progress}%
+                    </div>
                   </div>
+                  <a
+                    href={`/api/reports/export?code=${encodeURIComponent(r.code)}`}
+                    download
+                    className="inline-flex items-center gap-1.5 rounded-sm border border-[#1e3a5f] bg-white text-[#1e3a5f] hover:bg-[#1e3a5f]/5 px-3 py-1.5 text-xs font-semibold transition-colors"
+                    title="Export PDF"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    PDF
+                  </a>
                 </div>
               </div>
 

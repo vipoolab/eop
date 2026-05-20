@@ -199,6 +199,13 @@ export const navSections: NavSection[] = [
         torRef: "6.1 / 6.2",
         description: "พยากรณ์พื้นที่/เวลาเสี่ยง + Executive Summary AI",
       },
+      {
+        label: "Dashboards (5 ประเภท)",
+        href: "/dashboards",
+        icon: LayoutDashboard,
+        torRef: "6.10.10",
+        description: "Mission · Risk · Incident · Resource · Performance",
+      },
     ],
   },
   {

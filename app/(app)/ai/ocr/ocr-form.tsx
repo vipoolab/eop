@@ -144,15 +144,22 @@ export function OcrForm() {
           </div>
         ) : (
           <div className="space-y-3">
-            {/* Image preview */}
+            {/* Preview — image or PDF */}
             <div className="rounded-sm border border-slate-200 bg-white overflow-hidden">
               <div className="aspect-[4/5] bg-slate-100 relative flex items-center justify-center">
-                {imagePreview && (
+                {imagePreview && file.type.startsWith("image/") && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={imagePreview}
                     alt={file.name}
                     className="absolute inset-0 w-full h-full object-contain"
+                  />
+                )}
+                {imagePreview && file.type === "application/pdf" && (
+                  <iframe
+                    src={imagePreview}
+                    className="absolute inset-0 w-full h-full"
+                    title={file.name}
                   />
                 )}
               </div>
