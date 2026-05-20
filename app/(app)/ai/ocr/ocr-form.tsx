@@ -130,16 +130,16 @@ export function OcrForm() {
             <input
               ref={fileInput}
               type="file"
-              accept="image/jpeg,image/png"
+              accept="image/jpeg,image/png,application/pdf"
               onChange={onChange}
               className="hidden"
             />
             <Upload className="h-12 w-12 text-slate-400 mb-3" />
             <p className="text-sm font-medium text-slate-700">
-              ลากภาพมาวางที่นี่ หรือคลิกเพื่อเลือก
+              ลากภาพ/PDF มาวางที่นี่ หรือคลิกเพื่อเลือก
             </p>
             <p className="text-xs text-slate-500 mt-1.5">
-              JPG · PNG (สูงสุด 10 MB)
+              JPG · PNG · PDF (สูงสุด 10 MB)
             </p>
           </div>
         ) : (

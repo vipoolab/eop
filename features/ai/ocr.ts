@@ -1,5 +1,5 @@
 // AI OCR Service — TOR 5.4.6 / 6.10.3(ค) PoC #3
-// Extract Thai text from images using Claude Vision
+// Extract Thai text from images and PDFs using Claude Vision + Document
 
 import { getClaude, MODELS } from "@/lib/claude";
 
@@ -11,12 +11,13 @@ export interface OcrResult {
   model: string;
   tokensUsed: number;
   elapsedMs: number;
+  pages?: number;
 }
 
 const SYSTEM_PROMPT = `คุณเป็น OCR engine ขั้นสูงที่เชี่ยวชาญด้านการอ่านเอกสารราชการภาษาไทย
 
 # หน้าที่
-อ่านและสกัดข้อความ "ทั้งหมด" จากภาพที่ได้รับ ให้ครบถ้วนและถูกต้องตามต้นฉบับ
+อ่านและสกัดข้อความ "ทั้งหมด" จากเอกสารที่ได้รับ ให้ครบถ้วนและถูกต้องตามต้นฉบับ
 
 # กฎ
 - รักษารูปแบบ/การเว้นบรรทัดของต้นฉบับให้มากที่สุด
@@ -24,44 +25,76 @@ const SYSTEM_PROMPT = `คุณเป็น OCR engine ขั้นสูงท
 - ถ้าคำใดอ่านไม่ออก ให้ใส่ [...อ่านไม่ออก...] แทน
 - ตัวเลขไทย (๐-๙) ให้คงตามต้นฉบับ
 - เครื่องหมายและสัญลักษณ์ คงตามต้นฉบับ
-- หัวกระดาษ ตรา และข้อความทั้งหมดในภาพ ต้องอ่านครบ
+- หัวกระดาษ ตรา และข้อความทั้งหมด ต้องอ่านครบ
+- ถ้า PDF มีหลายหน้า ให้แยกแต่ละหน้าด้วย "--- หน้า N ---"
 
 # Output Format (JSON เท่านั้น)
 {
   "text": "ข้อความทั้งหมดที่อ่านได้ — รักษา line breaks",
   "detectedLines": <จำนวนบรรทัด>,
+  "pages": <จำนวนหน้า (สำหรับ PDF) หรือ 1>,
   "confidence": 0.00-1.00 (ความมั่นใจว่าอ่านถูก),
   "reasoning": "ข้อสังเกต 1-2 ประโยค เช่น คุณภาพภาพ ส่วนที่อ่านยาก"
 }`;
 
+type SupportedMime =
+  | "image/jpeg"
+  | "image/png"
+  | "application/pdf";
+
+export function isOcrSupported(mime: string): boolean {
+  return ["image/jpeg", "image/png", "application/pdf"].includes(mime);
+}
+
 export async function performOcr(input: {
-  imageBuffer: Buffer;
-  mimeType: "image/jpeg" | "image/png";
+  fileBuffer: Buffer;
+  mimeType: SupportedMime;
 }): Promise<OcrResult> {
   const t0 = Date.now();
   const client = getClaude();
 
+  // PDF → document type, Image → image type
+  const isPdf = input.mimeType === "application/pdf";
+
+  const content = isPdf
+    ? [
+        {
+          type: "document" as const,
+          source: {
+            type: "base64" as const,
+            media_type: "application/pdf",
+            data: input.fileBuffer.toString("base64"),
+          },
+        },
+        {
+          type: "text" as const,
+          text: "กรุณาอ่านข้อความทั้งหมดในเอกสาร PDF นี้ (รวมทุกหน้า) และส่งคืน JSON ตาม schema",
+        },
+      ]
+    : [
+        {
+          type: "image" as const,
+          source: {
+            type: "base64" as const,
+            media_type: input.mimeType,
+            data: input.fileBuffer.toString("base64"),
+          },
+        },
+        {
+          type: "text" as const,
+          text: "กรุณาอ่านข้อความทั้งหมดในภาพ และส่งคืน JSON ตาม schema",
+        },
+      ];
+
   const response = await client.messages.create({
-    model: MODELS.SONNET, // Use Sonnet for OCR — better vision accuracy
-    max_tokens: 4096,
+    model: MODELS.SONNET,
+    max_tokens: 8192, // bigger for multi-page PDFs
     system: SYSTEM_PROMPT,
     messages: [
       {
         role: "user",
-        content: [
-          {
-            type: "image",
-            source: {
-              type: "base64",
-              media_type: input.mimeType,
-              data: input.imageBuffer.toString("base64"),
-            },
-          },
-          {
-            type: "text",
-            text: "กรุณาอ่านข้อความทั้งหมดในภาพ และส่งคืน JSON ตาม schema",
-          },
-        ],
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        content: content as any,
       },
     ],
   });
@@ -81,6 +114,7 @@ export async function performOcr(input: {
   let parsed: {
     text?: string;
     detectedLines?: number;
+    pages?: number;
     confidence?: number;
     reasoning?: string;
   };
@@ -89,13 +123,14 @@ export async function performOcr(input: {
     parsed = JSON.parse(raw);
   } catch {
     // Fallback — treat entire output as text
-    parsed = { text: raw, detectedLines: 0, confidence: 0.5 };
+    parsed = { text: raw, detectedLines: 0, pages: 1, confidence: 0.5 };
   }
 
   return {
     text: parsed.text ?? "",
     detectedLines:
       parsed.detectedLines ?? parsed.text?.split("\n").length ?? 0,
+    pages: parsed.pages ?? 1,
     confidence: parsed.confidence ?? 0.8,
     reasoning: parsed.reasoning ?? "",
     model: MODELS.SONNET,

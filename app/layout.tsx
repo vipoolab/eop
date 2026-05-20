@@ -13,6 +13,13 @@ export const metadata: Metadata = {
   title: "EOP — สำนักงานยุทธศาสตร์ตำรวจ",
   description:
     "Enterprise Operation Planning — ระบบวางแผนและติดตามการปฏิบัติงานสำนักงานตำรวจแห่งชาติ",
+  manifest: "/manifest.json",
+  themeColor: "#1e3a5f",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "EOP",
+  },
 };
 
 export default function RootLayout({

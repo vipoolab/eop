@@ -68,7 +68,7 @@ async function main() {
   console.log("🤖 Calling Claude OCR...");
   const { performOcr } = await import("../features/ai/ocr");
   const result = await performOcr({
-    imageBuffer: pngBuffer,
+    fileBuffer: pngBuffer,
     mimeType: "image/png",
   });
 

@@ -1,12 +1,12 @@
-// POST /api/ai/ocr — Image → Thai text via Claude Vision
+// POST /api/ai/ocr — Image/PDF → Thai text via Claude Vision
 
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { performOcr } from "@/features/ai/ocr";
+import { performOcr, isOcrSupported } from "@/features/ai/ocr";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 90; // bigger PDFs take longer
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
@@ -46,11 +46,11 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  if (file.type !== "image/jpeg" && file.type !== "image/png") {
+  if (!isOcrSupported(file.type)) {
     return NextResponse.json(
       {
         success: false,
-        message: "รองรับเฉพาะ JPG / PNG",
+        message: "รองรับเฉพาะ JPG / PNG / PDF",
       },
       { status: 400 }
     );
@@ -59,8 +59,8 @@ export async function POST(req: NextRequest) {
   try {
     const buffer = Buffer.from(await file.arrayBuffer());
     const result = await performOcr({
-      imageBuffer: buffer,
-      mimeType: file.type as "image/jpeg" | "image/png",
+      fileBuffer: buffer,
+      mimeType: file.type as "image/jpeg" | "image/png" | "application/pdf",
     });
 
     // Audit log
@@ -68,12 +68,13 @@ export async function POST(req: NextRequest) {
       data: {
         userId: session.user.id,
         action: "ai.ocr",
-        target: `image:${file.name}`,
+        target: `file:${file.name}`,
         details: {
           filename: file.name,
           size: file.size,
           mimeType: file.type,
           detectedLines: result.detectedLines,
+          pages: result.pages,
           confidence: result.confidence,
           tokensUsed: result.tokensUsed,
           elapsedMs: result.elapsedMs,
