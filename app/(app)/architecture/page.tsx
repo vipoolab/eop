@@ -1,5 +1,6 @@
 // System Architecture — Hardware + Network topology
 
+import Image from "next/image";
 import { PageHeader } from "@/components/page-header";
 import {
   Network,
@@ -118,6 +119,33 @@ export default function ArchitecturePage() {
         title="สถาปัตยกรรมระบบ"
         description="โครงสร้างฮาร์ดแวร์ของ Data Center — Compute · Storage · Network · Power · End-user Devices"
       />
+
+      {/* Architecture diagram (visual SVG) */}
+      <div className="rounded-sm border border-slate-200 bg-white overflow-hidden">
+        <div className="border-b border-slate-100 px-5 py-3 flex items-center justify-between">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            System Architecture Overview
+          </h2>
+          <a
+            href="/architecture-overview.svg"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[11px] text-[#1e3a5f] hover:underline font-semibold"
+          >
+            เปิดเต็มจอ ↗
+          </a>
+        </div>
+        <div className="p-2 bg-slate-50/50 overflow-x-auto">
+          <Image
+            src="/architecture-overview.svg"
+            alt="EOP System Architecture Overview"
+            width={1600}
+            height={1100}
+            className="w-full h-auto min-w-[1200px]"
+            unoptimized
+          />
+        </div>
+      </div>
 
       {/* Quick characteristics */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
