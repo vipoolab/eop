@@ -13,6 +13,7 @@ import {
   Search,
   CheckCircle2,
 } from "lucide-react";
+import { timeAgo } from "@/lib/time";
 
 export const dynamic = "force-dynamic";
 
@@ -99,17 +100,7 @@ function getMeta(action: string) {
   return ACTION_META[action] ?? DEFAULT_META;
 }
 
-function timeAgo(date: Date): string {
-  const diff = Date.now() - date.getTime();
-  const min = Math.floor(diff / 60000);
-  if (min < 1) return "เมื่อสักครู่";
-  if (min < 60) return `${min} นาทีที่แล้ว`;
-  const hr = Math.floor(min / 60);
-  if (hr < 24) return `${hr} ชั่วโมงที่แล้ว`;
-  const day = Math.floor(hr / 24);
-  if (day < 30) return `${day} วันที่แล้ว`;
-  return date.toLocaleDateString("th-TH");
-}
+// timeAgo imported from "@/lib/time"
 
 export default async function AuditLogPage() {
   const session = await auth();

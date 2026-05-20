@@ -40,10 +40,14 @@ export async function GET(req: NextRequest) {
   if (sp.get("status")) filters.status = sp.get("status") as CommandStatus;
   if (sp.get("priority"))
     filters.priority = sp.get("priority") as CommandPriority;
-  if (sp.get("dateFrom"))
-    filters.dateFrom = new Date(sp.get("dateFrom") as string);
-  if (sp.get("dateTo"))
-    filters.dateTo = new Date(sp.get("dateTo") as string);
+
+  const parseDate = (s: string | null): Date | undefined => {
+    if (!s) return undefined;
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? undefined : d;
+  };
+  filters.dateFrom = parseDate(sp.get("dateFrom"));
+  filters.dateTo = parseDate(sp.get("dateTo"));
 
   try {
     const result = await search({ mode, query, filters });

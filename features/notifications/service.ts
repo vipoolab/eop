@@ -3,6 +3,7 @@
 // Auto-escalate if not acknowledged within deadline
 
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@/lib/generated/prisma";
 
 export type Channel = "in_app" | "email" | "line" | "sms";
 
@@ -111,7 +112,6 @@ const ESCALATION_RULES = {
 } as const;
 
 export async function runEscalationCheck() {
-  const cutoffHours = 24; // check commands published within last 7 days
   const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
   const commands = await prisma.command.findMany({
@@ -135,6 +135,9 @@ export async function runEscalationCheck() {
     reason: "due_soon" | "overdue";
   }> = [];
 
+  // Collect audit log entries to batch insert at end
+  const auditLogs: Prisma.AuditLogCreateManyInput[] = [];
+
   for (const cmd of commands) {
     if (!cmd.publishedAt) continue;
     const ageHours =
@@ -150,16 +153,16 @@ export async function runEscalationCheck() {
           reason: "overdue",
         });
 
-        // Notify creator + escalation
-        await sendNotification({
+        auditLogs.push({
           userId: cmd.creator.id,
-          kind: "command.escalated",
-          title: `Auto-Escalation: ${cmd.docNo}`,
-          body: `หน่วย ${target.unit.code} (${target.unit.name}) ยังไม่รับทราบคำสั่งหลังเลย deadline`,
-          link: `/command/workflow/${cmd.id}`,
-          channels: ["in_app", "email"],
+          action: "notification.command.escalated",
           target: `command:${cmd.id}`,
-          priority: cmd.priority,
+          details: {
+            title: `Auto-Escalation: ${cmd.docNo}`,
+            unit: target.unit.code,
+            channels: ["in_app", "email"],
+            priority: cmd.priority,
+          },
         });
       } else if (ageHours > rule.ackHours) {
         escalations.push({
@@ -169,18 +172,24 @@ export async function runEscalationCheck() {
           reason: "due_soon",
         });
 
-        await sendNotification({
+        auditLogs.push({
           userId: cmd.creator.id,
-          kind: "command.due_soon",
-          title: `Due Soon: ${cmd.docNo}`,
-          body: `หน่วย ${target.unit.code} ใกล้ครบกำหนดรับทราบ`,
-          link: `/command/workflow/${cmd.id}`,
-          channels: ["in_app"],
+          action: "notification.command.due_soon",
           target: `command:${cmd.id}`,
-          priority: cmd.priority,
+          details: {
+            title: `Due Soon: ${cmd.docNo}`,
+            unit: target.unit.code,
+            channels: ["in_app"],
+            priority: cmd.priority,
+          },
         });
       }
     }
+  }
+
+  // Batch insert all audit logs in one query
+  if (auditLogs.length > 0) {
+    await prisma.auditLog.createMany({ data: auditLogs });
   }
 
   return { scanned: commands.length, escalations };

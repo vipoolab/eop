@@ -45,6 +45,15 @@ export default async function StrategicAlignmentPage() {
     orderBy: { startDate: "asc" },
   });
 
+  // Build parent → children map ONCE (avoid O(n²) re-filter in recursive PlanNode)
+  const childrenByParent = new Map<string, Plan[]>();
+  for (const p of plans) {
+    if (!p.parentId) continue;
+    const list = childrenByParent.get(p.parentId);
+    if (list) list.push(p);
+    else childrenByParent.set(p.parentId, [p]);
+  }
+
   const national = plans.filter((p) => p.level === "NATIONAL");
   const master = plans.filter((p) => p.level === "MASTER");
   const action = plans.filter((p) => p.level === "ACTION");
@@ -96,8 +105,7 @@ export default async function StrategicAlignmentPage() {
             <PlanNode
               key={np.id}
               plan={np}
-              childPlans={master.filter((m) => m.parentId === np.id)}
-              actionPlans={action}
+              childrenByParent={childrenByParent}
             />
           ))}
         </div>
@@ -130,13 +138,12 @@ export default async function StrategicAlignmentPage() {
 
 function PlanNode({
   plan,
-  childPlans,
-  actionPlans,
+  childrenByParent,
 }: {
   plan: Plan;
-  childPlans: Plan[];
-  actionPlans: Plan[];
+  childrenByParent: Map<string, Plan[]>;
 }) {
+  const childPlans = childrenByParent.get(plan.id) ?? [];
   const meta = LEVEL_META[plan.level as keyof typeof LEVEL_META];
   return (
     <div>
@@ -182,10 +189,7 @@ function PlanNode({
               <div className="flex-1">
                 <PlanNode
                   plan={child}
-                  childPlans={actionPlans.filter(
-                    (a) => a.parentId === child.id
-                  )}
-                  actionPlans={[]}
+                  childrenByParent={childrenByParent}
                 />
               </div>
             </div>

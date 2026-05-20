@@ -15,6 +15,7 @@ import {
   STATUS_LABELS,
   type CommandStatus,
 } from "@/features/commands/types";
+import { timeAgo } from "@/lib/time";
 
 export const dynamic = "force-dynamic";
 
@@ -40,18 +41,6 @@ function iconKey(action: string) {
   if (action.startsWith("ai.")) return "ai";
   if (action.startsWith("audit.")) return "audit";
   return "default";
-}
-
-function timeAgo(date: Date): string {
-  const diff = Date.now() - date.getTime();
-  const min = Math.floor(diff / 60000);
-  if (min < 1) return "เมื่อสักครู่";
-  if (min < 60) return `${min} นาทีที่แล้ว`;
-  const hr = Math.floor(min / 60);
-  if (hr < 24) return `${hr} ชั่วโมงที่แล้ว`;
-  const day = Math.floor(hr / 24);
-  if (day < 30) return `${day} วันที่แล้ว`;
-  return date.toLocaleDateString("th-TH");
 }
 
 export default async function DashboardPage() {

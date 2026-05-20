@@ -69,29 +69,5 @@ export async function getCommandsByStatus() {
   }, {});
 }
 
-/** Generate next sequential doc number */
-export async function getNextDocNo(): Promise<string> {
-  const count = await prisma.command.count();
-  const num = count + 1;
-  const padded = String(num).padStart(4, "0");
-  // Thai digits
-  const thaiNum = padded
-    .split("")
-    .map(
-      (c) =>
-        ({
-          "0": "๐",
-          "1": "๑",
-          "2": "๒",
-          "3": "๓",
-          "4": "๔",
-          "5": "๕",
-          "6": "๖",
-          "7": "๗",
-          "8": "๘",
-          "9": "๙",
-        })[c] ?? c
-    )
-    .join("");
-  return `ตร ๐๐๐๑.๖๙/${thaiNum}`;
-}
+// Note: getNextDocNo() has been inlined into createCommand() inside transaction
+// to reduce race window. See features/commands/service.ts

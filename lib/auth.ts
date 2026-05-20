@@ -10,10 +10,18 @@ import { z } from "zod";
 import { prisma } from "./prisma";
 
 // ─────────────────────────────────────────────
-// Type augmentation — add custom fields to session
+// Type augmentation
 // ─────────────────────────────────────────────
 
 type Role = "ADMIN" | "COMMANDER" | "STAFF" | "AUDITOR" | "VIEWER";
+
+interface AppJWTFields {
+  id: string;
+  role: Role;
+  rank?: string | null;
+  unitCode?: string | null;
+  refreshAt?: number; // unix ms — TTL for stale-while-revalidate user data
+}
 
 declare module "next-auth" {
   interface Session {
@@ -33,21 +41,17 @@ declare module "next-auth" {
   }
 }
 
-// Note: JWT augmentation removed — Auth.js v5 doesn't expose next-auth/jwt module
-// Custom fields are typed via the User interface above
-
 // ─────────────────────────────────────────────
 // Login validation
 // ─────────────────────────────────────────────
 
 const loginSchema = z.object({
-  email: z.string().email("รูปแบบอีเมลไม่ถูกต้อง"),
-  password: z.string().min(6, "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร"),
+  email: z.string().email(),
+  password: z.string().min(6),
 });
 
-// ─────────────────────────────────────────────
-// Auth.js config
-// ─────────────────────────────────────────────
+// JWT refresh interval — re-fetch user data from DB at most every 60s
+const REFRESH_TTL_MS = 60 * 1000;
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   session: {
@@ -67,30 +71,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        // Validate input
         const parsed = loginSchema.safeParse(credentials);
-        if (!parsed.success) {
-          return null;
-        }
+        if (!parsed.success) return null;
 
-        // Find user + unit
         const user = await prisma.user.findUnique({
           where: { email: parsed.data.email },
           include: { unit: true },
         });
 
-        if (!user || !user.active) {
-          return null;
-        }
+        if (!user || !user.active) return null;
 
-        // Verify password (bcrypt one-way hash — TOR 7.1.2)
         const valid = await bcrypt.compare(
           parsed.data.password,
           user.passwordHash
         );
 
         if (!valid) {
-          // Log failed login attempt
           await prisma.auditLog.create({
             data: {
               userId: user.id,
@@ -102,7 +98,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
-        // Log successful login (TOR 7.1.5 Audit Trail)
         await prisma.auditLog.create({
           data: {
             userId: user.id,
@@ -128,50 +123,59 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
-      // First sign in — copy from User object
+    async jwt({ token, user, trigger }) {
+      const t = token as typeof token & Partial<AppJWTFields>;
+
+      // First sign-in: hydrate from user object + set refresh expiry
       if (user) {
         const u = user as {
           id?: string;
           role?: Role;
           rank?: string | null;
           unitCode?: string | null;
+          name?: string | null;
         };
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (token as any).id = u.id;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (token as any).role = u.role;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (token as any).rank = u.rank;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (token as any).unitCode = u.unitCode;
+        t.id = u.id ?? "";
+        t.role = (u.role ?? "VIEWER") as Role;
+        t.rank = u.rank;
+        t.unitCode = u.unitCode;
+        if (u.name) t.name = u.name;
+        t.refreshAt = Date.now() + REFRESH_TTL_MS;
+        return t;
       }
-      return token;
+
+      // Session update event OR TTL expired → refetch fresh user data once
+      const shouldRefresh =
+        trigger === "update" ||
+        (typeof t.refreshAt === "number" && Date.now() > t.refreshAt);
+
+      if (shouldRefresh && t.id) {
+        const fresh = await prisma.user.findUnique({
+          where: { id: t.id },
+          select: { name: true, rank: true, role: true, active: true },
+        });
+        if (fresh) {
+          if (!fresh.active) {
+            // Force re-login if deactivated
+            return null as never;
+          }
+          t.name = fresh.name;
+          t.rank = fresh.rank;
+          t.role = fresh.role as Role;
+        }
+        t.refreshAt = Date.now() + REFRESH_TTL_MS;
+      }
+
+      return t;
     },
     async session({ session, token }) {
-      // Expose custom fields to client
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const t = token as any;
+      const t = token as typeof token & Partial<AppJWTFields>;
       if (session.user && t.id) {
         session.user.id = t.id;
-        session.user.role = t.role;
+        session.user.role = (t.role ?? "VIEWER") as Role;
         session.user.rank = t.rank;
         session.user.unitCode = t.unitCode;
-
-        // Re-fetch latest name from DB (in case it was updated post-login)
-        // Note: small perf cost per request; acceptable for demo phase
-        try {
-          const fresh = await prisma.user.findUnique({
-            where: { id: t.id },
-            select: { name: true, rank: true },
-          });
-          if (fresh) {
-            session.user.name = fresh.name;
-            session.user.rank = fresh.rank;
-          }
-        } catch {
-          // ignore — keep cached values
-        }
+        if (typeof t.name === "string") session.user.name = t.name;
       }
       return session;
     },

@@ -23,7 +23,9 @@ export default async function CommandWorkflowPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
+  // Bound query — recent 200 commands max for Kanban display
   const commands = await prisma.command.findMany({
+    take: 200,
     include: {
       creator: { select: { name: true, rank: true } },
       targets: { select: { id: true, acknowledged: true } },

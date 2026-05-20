@@ -2,7 +2,7 @@
 // NLP analyzes whether lower-level plans align with upper-level plans
 // Suggests revisions where misalignment exists
 
-import { getClaude, MODELS } from "@/lib/claude";
+import { getClaude, MODELS, parseClaudeJson } from "@/lib/claude";
 
 export interface AlignmentInput {
   parent: { code: string; title: string; description: string | null };
@@ -67,24 +67,12 @@ export async function analyzeAlignment(
     throw new Error("Claude ไม่ตอบกลับเป็นข้อความ");
   }
 
-  const raw = textOut.text
-    .trim()
-    .replace(/^```json\n?/i, "")
-    .replace(/^```\n?/i, "")
-    .replace(/\n?```$/i, "")
-    .trim();
-
-  let parsed: {
+  const parsed = parseClaudeJson<{
     score?: number;
     gaps?: string[];
     suggestions?: string[];
     rationale?: string;
-  };
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    parsed = { score: 0.5, gaps: [], suggestions: [], rationale: raw };
-  }
+  }>(textOut.text, { score: 0.5, gaps: [], suggestions: [], rationale: textOut.text });
 
   return {
     score: parsed.score ?? 0.5,

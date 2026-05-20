@@ -1,7 +1,7 @@
 // AI OCR Service — TOR 5.4.6 / 6.10.3(ค) PoC #3
 // Extract Thai text from images and PDFs using Claude Vision + Document
 
-import { getClaude, MODELS } from "@/lib/claude";
+import { getClaude, MODELS, parseClaudeJson } from "@/lib/claude";
 
 export interface OcrResult {
   text: string;
@@ -104,27 +104,18 @@ export async function performOcr(input: {
     throw new Error("Claude ไม่ตอบกลับเป็นข้อความ");
   }
 
-  const raw = textOut.text
-    .trim()
-    .replace(/^```json\n?/i, "")
-    .replace(/^```\n?/i, "")
-    .replace(/\n?```$/i, "")
-    .trim();
-
-  let parsed: {
+  const parsed = parseClaudeJson<{
     text?: string;
     detectedLines?: number;
     pages?: number;
     confidence?: number;
     reasoning?: string;
-  };
-
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    // Fallback — treat entire output as text
-    parsed = { text: raw, detectedLines: 0, pages: 1, confidence: 0.5 };
-  }
+  }>(textOut.text, {
+    text: textOut.text,
+    detectedLines: 0,
+    pages: 1,
+    confidence: 0.5,
+  });
 
   return {
     text: parsed.text ?? "",

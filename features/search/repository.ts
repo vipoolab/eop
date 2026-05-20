@@ -231,13 +231,37 @@ export async function semanticSearch(query: string): Promise<{
     return { hits: [], aiReasoning: "", tokensUsed: 0 };
   }
 
-  // Step 1: Fetch candidate set — recent + keyword-matched
-  // (in production: would use vector embeddings + pgvector ANN search)
-  const candidates = await prisma.command.findMany({
-    take: 30,
+  // Step 1: Build candidate set
+  // - Keyword matches (broader OR on any term ≥ 2 chars)
+  // - Topped up with recent commands so semantic-only queries still work
+  const terms = query.trim().split(/\s+/).filter((t) => t.length >= 2);
+
+  const keywordMatches = terms.length > 0
+    ? await prisma.command.findMany({
+        where: {
+          OR: terms.flatMap((t) => [
+            { subject: { contains: t, mode: "insensitive" as const } },
+            { body: { contains: t, mode: "insensitive" as const } },
+            { objective: { contains: t, mode: "insensitive" as const } },
+            { recipient: { contains: t, mode: "insensitive" as const } },
+          ]),
+        },
+        take: 50,
+        orderBy: { createdAt: "desc" },
+        include: { creator: { select: { name: true, rank: true } } },
+      })
+    : [];
+
+  const recent = await prisma.command.findMany({
+    where: keywordMatches.length > 0
+      ? { id: { notIn: keywordMatches.map((c) => c.id) } }
+      : undefined,
+    take: 30 - Math.min(keywordMatches.length, 30),
     orderBy: { createdAt: "desc" },
     include: { creator: { select: { name: true, rank: true } } },
   });
+
+  const candidates = [...keywordMatches, ...recent].slice(0, 30);
 
   if (candidates.length === 0) {
     return { hits: [], aiReasoning: "ไม่มีคำสั่งในระบบ", tokensUsed: 0 };

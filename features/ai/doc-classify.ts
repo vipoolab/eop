@@ -1,7 +1,7 @@
 // AI Document Classification Service — TOR 5.4.6 PoC #2 (10 คะแนน)
 // Classifies uploaded documents into 6 หมวดหน่วยงาน via Claude
 
-import { getClaude, MODELS } from "@/lib/claude";
+import { getClaude, MODELS, parseClaudeJson } from "@/lib/claude";
 import mammoth from "mammoth";
 import * as XLSX from "xlsx";
 
@@ -222,25 +222,16 @@ export async function classifyDocument(
     throw new Error("Claude ไม่ตอบกลับเป็นข้อความ");
   }
 
-  const raw = textOut.text
-    .trim()
-    .replace(/^```json\n?/i, "")
-    .replace(/^```\n?/i, "")
-    .replace(/\n?```$/i, "")
-    .trim();
-
-  let parsed: {
+  const parsed = parseClaudeJson<{
     unitCode?: string;
     confidence?: number;
     reasoning?: string;
     extractedSummary?: string;
-  };
+  }>(textOut.text, {});
 
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
+  if (!parsed.unitCode) {
     throw new Error(
-      `Claude returned invalid JSON: ${raw.slice(0, 200)}`
+      `Claude returned invalid JSON: ${textOut.text.slice(0, 200)}`
     );
   }
 

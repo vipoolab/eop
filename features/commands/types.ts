@@ -86,7 +86,7 @@ export function formatDocNo(num: number, year: number = 2569): string {
   return `ตร ๐๐๐๑.๖๙/${toThaiDigits(padded)}`;
 }
 
-function toThaiDigits(s: string): string {
+export function toThaiDigits(s: string): string {
   const map: Record<string, string> = {
     "0": "๐",
     "1": "๑",

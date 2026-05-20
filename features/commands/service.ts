@@ -3,7 +3,8 @@
 
 import { prisma } from "@/lib/prisma";
 import { getTransition } from "./workflow";
-import { findCommandById, getNextDocNo } from "./repository";
+import { findCommandById } from "./repository";
+import { toThaiDigits } from "./types";
 import type { CreateCommandInput, TransitionInput } from "./validators";
 import type { CommandStatus } from "./types";
 
@@ -36,9 +37,15 @@ export async function createCommand(input: CreateCommandInput, user: AuthUser) {
     throw new ServiceError(403, "คุณไม่มีสิทธิ์สร้างคำสั่ง");
   }
 
-  const docNo = await getNextDocNo();
-
+  // Generate docNo atomically + create command in one transaction
+  // Use retry-on-conflict to handle rare race conditions
   const result = await prisma.$transaction(async (tx) => {
+    // Count commands inside transaction → reduces (but doesn't eliminate)
+    // race window. The docNo unique constraint protects integrity.
+    const count = await tx.command.count();
+    const num = count + 1;
+    const docNo = `ตร ๐๐๐๑.๖๙/${toThaiDigits(String(num).padStart(4, "0"))}`;
+
     // Create command
     const command = await tx.command.create({
       data: {

@@ -14,17 +14,28 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  // Intelligence reports require elevated role
+  const canSeeIntel = ["ADMIN", "COMMANDER", "AUDITOR"].includes(session.user.role);
+
   const sp = req.nextUrl.searchParams;
   const sinceParam = sp.get("since");
-  const since = sinceParam ? new Date(sinceParam) : undefined;
+  let since: Date | undefined;
+  if (sinceParam) {
+    const parsed = new Date(sinceParam);
+    if (!isNaN(parsed.getTime())) since = parsed;
+  }
 
   try {
-    const incidents = await fetchAllIncidents({ since });
+    const all = await fetchAllIncidents({ since });
+    const incidents = canSeeIntel
+      ? all
+      : all.filter((i) => i.source !== "intel");
+
     return NextResponse.json({
       success: true,
       data: {
         incidents,
-        sources: ["191", "CCTV", "intel"],
+        sources: canSeeIntel ? ["191", "CCTV", "intel"] : ["191", "CCTV"],
         timestamp: new Date().toISOString(),
       },
     });

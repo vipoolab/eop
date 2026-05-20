@@ -17,6 +17,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  if (!["ADMIN", "COMMANDER", "STAFF"].includes(session.user.role)) {
+    return NextResponse.json(
+      { success: false, message: "คุณไม่มีสิทธิ์ใช้ฟีเจอร์นี้" },
+      { status: 403 }
+    );
+  }
+
   const body = await req.json().catch(() => null);
   const childPlanId = body?.childPlanId as string | undefined;
 

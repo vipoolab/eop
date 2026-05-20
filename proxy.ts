@@ -9,14 +9,16 @@ export default auth((req) => {
   const { pathname } = req.nextUrl;
 
   // Public paths — ไม่ต้อง login
+  // Strict allowlist: known public routes + Next.js internals + specific public assets
   const isPublic =
     pathname === "/login" ||
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/_next") ||
+    pathname === "/favicon.ico" ||
+    pathname === "/manifest.json" ||
+    pathname.startsWith("/icon-") || // /icon-192.png, /icon-512.png
     pathname.startsWith("/favicon") ||
-    pathname.endsWith(".svg") ||
-    pathname.endsWith(".png") ||
-    pathname.endsWith(".ico");
+    pathname.startsWith("/fonts/"); // /fonts/NotoSansThai-Regular.ttf
 
   // Redirect ผู้ที่ login แล้วออกจากหน้า /login → /dashboard
   if (isLoggedIn && pathname === "/login") {

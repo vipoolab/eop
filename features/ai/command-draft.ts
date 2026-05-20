@@ -1,7 +1,7 @@
 // AI Command Drafting Service — TOR 5.4.4 PoC #1
 // Generates Thai police-style command text from structured input
 
-import { getClaude, MODELS, DEFAULT_MAX_TOKENS } from "@/lib/claude";
+import { getClaude, MODELS, DEFAULT_MAX_TOKENS, parseClaudeJson } from "@/lib/claude";
 
 export interface DraftInput {
   /** หัวเรื่อง */
@@ -86,21 +86,11 @@ export async function generateCommandDraft(
     throw new Error("Claude ไม่ตอบกลับเป็นข้อความ");
   }
 
-  // Strip code fences if any
-  const raw = textBlock.text
-    .trim()
-    .replace(/^```json\n?/i, "")
-    .replace(/^```\n?/i, "")
-    .replace(/\n?```$/i, "")
-    .trim();
-
-  let parsed: { reference?: string; objective?: string; body?: string };
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    // Fallback — if not valid JSON, return as body
-    parsed = { body: raw };
-  }
+  const parsed = parseClaudeJson<{
+    reference?: string;
+    objective?: string;
+    body?: string;
+  }>(textBlock.text, { body: textBlock.text });
 
   return {
     reference: parsed.reference ?? "",
