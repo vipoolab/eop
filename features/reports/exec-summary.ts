@@ -125,7 +125,7 @@ ${underperforming.map((k) => `- ${k.code} ${k.name}: ${k.actual}/${k.target} (${
   const start = Date.now();
   const claude = getClaude();
   const resp = await claude.messages.create({
-    model: MODELS.SONNET,
+    model: MODELS.OPUS,
     max_tokens: 2048,
     system: systemPrompt,
     messages: [{ role: "user", content: userPrompt }],
@@ -158,7 +158,7 @@ ${underperforming.map((k) => `- ${k.code} ${k.name}: ${k.actual}/${k.target} (${
     recommendations: Array.isArray(parsed.recommendations)
       ? parsed.recommendations
       : [],
-    model: MODELS.SONNET,
+    model: MODELS.OPUS,
     tokensUsed,
     elapsedMs,
   };

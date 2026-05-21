@@ -3,7 +3,6 @@
 
 import { getClaude, MODELS, parseClaudeJson } from "@/lib/claude";
 import mammoth from "mammoth";
-import * as XLSX from "xlsx";
 
 // ─────────────────────────────────────────────
 // 6 หน่วยงาน — fixed taxonomy
@@ -54,10 +53,10 @@ export type UnitCode = (typeof UNIT_CATEGORIES)[number]["code"];
 // File text extraction
 // ─────────────────────────────────────────────
 
+// TOR 3.5.2 (PoC 2) specifies DOCX as the test format.
+// PDF / JPG / PNG / TXT are also accepted for broader real-world use.
 const SUPPORTED_MIMES = {
   docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  xls: "application/vnd.ms-excel",
   pdf: "application/pdf",
   jpg: "image/jpeg",
   png: "image/png",
@@ -78,18 +77,6 @@ export async function extractTextFromBuffer(
   if (mime === SUPPORTED_MIMES.docx) {
     const result = await mammoth.extractRawText({ buffer });
     return { text: result.value, method: "mammoth/docx" };
-  }
-
-  // XLSX/XLS → xlsx
-  if (mime === SUPPORTED_MIMES.xlsx || mime === SUPPORTED_MIMES.xls) {
-    const wb = XLSX.read(buffer, { type: "buffer" });
-    const parts: string[] = [];
-    for (const sheetName of wb.SheetNames) {
-      parts.push(`# Sheet: ${sheetName}`);
-      const sheet = wb.Sheets[sheetName];
-      parts.push(XLSX.utils.sheet_to_csv(sheet));
-    }
-    return { text: parts.join("\n\n"), method: "xlsx/sheetToCsv" };
   }
 
   // Plain text
@@ -205,7 +192,7 @@ export async function classifyDocument(
   content.push({ type: "text", text: textBlock });
 
   const response = await client.messages.create({
-    model: MODELS.HAIKU,
+    model: MODELS.OPUS,
     max_tokens: 1024,
     system: SYSTEM_PROMPT,
     messages: [
@@ -235,16 +222,19 @@ export async function classifyDocument(
     );
   }
 
-  const unitCode = (parsed.unitCode || "อจ.") as UnitCode;
-  const cat = UNIT_CATEGORIES.find((c) => c.code === unitCode);
+  // Validate against fixed taxonomy — fall back to "อจ." (default per system prompt)
+  // if Claude hallucinates an unknown code rather than blindly casting.
+  const cat = UNIT_CATEGORIES.find((c) => c.code === parsed.unitCode);
+  const unitCode: UnitCode = cat ? cat.code : "อจ.";
+  const unitName = cat ? cat.name : "ฝ่ายอำนวยการ สยศ.ตร.";
 
   return {
     unitCode,
-    unitName: cat?.name ?? "ไม่ทราบ",
+    unitName,
     confidence: parsed.confidence ?? 0.5,
     reasoning: parsed.reasoning ?? "",
     extractedText: input.text ?? parsed.extractedSummary ?? "",
-    model: MODELS.HAIKU,
+    model: MODELS.OPUS,
     tokensUsed:
       response.usage.input_tokens + response.usage.output_tokens,
     elapsedMs: Date.now() - t0,

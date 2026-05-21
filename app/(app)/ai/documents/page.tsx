@@ -110,7 +110,7 @@ export default async function DocumentsHubPage() {
       {/* Info box */}
       <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-[11px] text-slate-600 leading-relaxed">
         <strong className="text-slate-700 block mb-1">เกี่ยวกับเครื่องมือนี้</strong>
-        ขับเคลื่อนด้วย Anthropic Claude 4.5 (Sonnet/Haiku) — รองรับไฟล์
+        ขับเคลื่อนด้วย Anthropic Claude Opus 4.5 — รองรับไฟล์
         <code className="mx-1 px-1.5 py-0.5 rounded bg-white border text-[10px]">
           .PDF
         </code>

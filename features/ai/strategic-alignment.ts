@@ -1,64 +1,102 @@
-// AI Strategic Plan Alignment — TOR 1.1.1, 1.2.1
-// NLP analyzes whether lower-level plans align with upper-level plans
-// Suggests revisions where misalignment exists
+// AI Strategic Alignment
+// TOR 5.4.1 ๑.๒.๑ Linkage Analysis: ร่างข้อสั่งการ ↔ ยุทธศาสตร์ชาติ
+// TOR 5.4.1 ๑.๒.๒ Draft Recommendation: AI แนะนำการปรับข้อความให้สอดคล้องกับ KPI + เป้าหมาย
 
 import { getClaude, MODELS, parseClaudeJson } from "@/lib/claude";
 
-export interface AlignmentInput {
-  parent: { code: string; title: string; description: string | null };
-  child: { code: string; title: string; description: string | null };
+export interface CommandAlignmentInput {
+  command: {
+    docNo: string;
+    subject: string;
+    objective: string | null;
+    body: string;
+  };
+  plan: {
+    code: string;
+    title: string;
+    description: string | null;
+    policyIntent: string | null;
+  };
+  kpis: Array<{
+    code: string;
+    name: string;
+    target: number;
+    unit: string | null;
+  }>;
 }
 
-export interface AlignmentResult {
-  score: number; // 0.0 - 1.0 alignment strength
-  gaps: string[]; // identified gaps
-  suggestions: string[]; // recommended revisions
-  rationale: string; // overall reasoning
+export interface CommandAlignmentResult {
+  score: number; // 0.0 - 1.0
+  gaps: string[];
+  suggestions: string[];
+  /** ๑.๒.๒ Draft Recommendation — ข้อความแก้ไขเสนอแนะ (suggested rewrite) */
+  suggestedBody: string | null;
+  rationale: string;
   model: string;
   tokensUsed: number;
   elapsedMs: number;
 }
 
-const SYSTEM_PROMPT = `คุณเป็นผู้เชี่ยวชาญด้านการวิเคราะห์แผนยุทธศาสตร์ภาครัฐ
-มีหน้าที่ตรวจสอบความสอดคล้อง (alignment) ระหว่างแผนระดับบนและแผนระดับล่าง
+const COMMAND_SYSTEM_PROMPT = `คุณเป็นผู้เชี่ยวชาญด้านการวิเคราะห์ความสอดคล้องระหว่างคำสั่งราชการกับแผนยุทธศาสตร์
+
+# หน้าที่
+๑) วิเคราะห์ความเชื่อมโยง (Linkage Analysis) ระหว่างร่างข้อสั่งการกับยุทธศาสตร์ชาติ
+๒) แนะนำการปรับแก้ไขข้อความให้สอดคล้องกับตัวชี้วัด (KPI) และเป้าหมายของแผน
 
 # วิธีพิจารณา
-- แผนระดับล่างต้อง "ตอบโจทย์" หรือ "ขยายความ" แผนระดับบน
-- หาว่ามี gap (ช่องว่าง) หรือไม่ — เป้าหมายของแผนบนที่แผนล่างไม่ได้ครอบคลุม
-- หาว่ามีส่วนเกิน (out-of-scope) หรือไม่ — แผนล่างพูดถึงเรื่องที่ไม่อยู่ในแผนบน
-- ความสอดคล้องของภาษา/concept
+- คำสั่งราชการมีจุดประสงค์ที่ตรงกับเป้าหมายของแผนหรือไม่
+- มีการอ้างอิงถึง KPI ตัวชี้วัดในเนื้อหาคำสั่งหรือไม่
+- ภาษาคำสั่งสอดคล้องกับโทนยุทธศาสตร์หรือไม่
+- มีช่องว่าง (gap) ที่คำสั่งไม่ครอบคลุมเป้าหมายแผนหรือไม่
 
 # Output Format (JSON เท่านั้น)
 {
-  "score": 0.00-1.00 (ความสอดคล้อง),
-  "gaps": ["gap 1", "gap 2", ...] (สิ่งที่แผนล่างไม่ครอบคลุม),
-  "suggestions": ["suggestion 1", ...] (ข้อเสนอแนะการปรับปรุง),
+  "score": 0.00-1.00 (ระดับความสอดคล้องของคำสั่ง vs แผน + KPI),
+  "gaps": ["gap ที่คำสั่งไม่ครอบคลุม"],
+  "suggestions": ["ข้อเสนอแนะการแก้ไขเนื้อหา"],
+  "suggestedBody": "ร่างเนื้อหาคำสั่งฉบับปรับปรุงให้สอดคล้องกับเป้าหมายแผน + KPI (เก็บโครงสร้างย่อหน้าและภาษาราชการ)",
   "rationale": "เหตุผลโดยย่อ 1-2 ประโยค"
 }`;
 
-export async function analyzeAlignment(
-  input: AlignmentInput
-): Promise<AlignmentResult> {
+export async function analyzeCommandAlignment(
+  input: CommandAlignmentInput
+): Promise<CommandAlignmentResult> {
   const t0 = Date.now();
 
+  const kpiLines =
+    input.kpis.length > 0
+      ? input.kpis
+          .map(
+            (k) =>
+              `- ${k.code} · ${k.name} · เป้า ${k.target}${k.unit ? " " + k.unit : ""}`
+          )
+          .join("\n")
+      : "(ไม่มี KPI ผูกกับแผนนี้)";
+
   const userPrompt = [
-    `# แผนระดับบน`,
-    `รหัส: ${input.parent.code}`,
-    `ชื่อ: ${input.parent.title}`,
-    `รายละเอียด: ${input.parent.description ?? "(ไม่มี)"}`,
+    `# ร่างข้อสั่งการ`,
+    `เลขที่: ${input.command.docNo}`,
+    `หัวเรื่อง: ${input.command.subject}`,
+    `วัตถุประสงค์: ${input.command.objective ?? "(ไม่มี)"}`,
+    `เนื้อหา:`,
+    input.command.body,
     ``,
-    `# แผนระดับล่าง`,
-    `รหัส: ${input.child.code}`,
-    `ชื่อ: ${input.child.title}`,
-    `รายละเอียด: ${input.child.description ?? "(ไม่มี)"}`,
+    `# แผนยุทธศาสตร์ที่ผูก`,
+    `รหัส: ${input.plan.code}`,
+    `ชื่อ: ${input.plan.title}`,
+    `รายละเอียด: ${input.plan.description ?? "(ไม่มี)"}`,
+    `เจตนาเชิงนโยบาย: ${input.plan.policyIntent ?? "(ไม่มี)"}`,
     ``,
-    `กรุณาวิเคราะห์ความสอดคล้องและส่งคืน JSON ตาม schema`,
+    `# ตัวชี้วัด (KPI) ของแผน`,
+    kpiLines,
+    ``,
+    `กรุณาวิเคราะห์ Linkage Analysis + Draft Recommendation และส่งคืน JSON ตาม schema`,
   ].join("\n");
 
   const response = await getClaude().messages.create({
-    model: MODELS.HAIKU,
-    max_tokens: 2048,
-    system: SYSTEM_PROMPT,
+    model: MODELS.OPUS, // ใช้ Opus 4.5 สำหรับ rewrite ที่ต้องการ quality
+    max_tokens: 4096,
+    system: COMMAND_SYSTEM_PROMPT,
     messages: [{ role: "user", content: userPrompt }],
   });
 
@@ -71,17 +109,24 @@ export async function analyzeAlignment(
     score?: number;
     gaps?: string[];
     suggestions?: string[];
+    suggestedBody?: string | null;
     rationale?: string;
-  }>(textOut.text, { score: 0.5, gaps: [], suggestions: [], rationale: textOut.text });
+  }>(textOut.text, {
+    score: 0.5,
+    gaps: [],
+    suggestions: [],
+    suggestedBody: null,
+    rationale: textOut.text,
+  });
 
   return {
     score: parsed.score ?? 0.5,
     gaps: parsed.gaps ?? [],
     suggestions: parsed.suggestions ?? [],
+    suggestedBody: parsed.suggestedBody ?? null,
     rationale: parsed.rationale ?? "",
-    model: MODELS.HAIKU,
-    tokensUsed:
-      response.usage.input_tokens + response.usage.output_tokens,
+    model: MODELS.OPUS,
+    tokensUsed: response.usage.input_tokens + response.usage.output_tokens,
     elapsedMs: Date.now() - t0,
   };
 }

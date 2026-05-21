@@ -87,7 +87,7 @@ export async function performOcr(input: {
       ];
 
   const response = await client.messages.create({
-    model: MODELS.SONNET,
+    model: MODELS.OPUS,
     max_tokens: 8192, // bigger for multi-page PDFs
     system: SYSTEM_PROMPT,
     messages: [
@@ -124,7 +124,7 @@ export async function performOcr(input: {
     pages: parsed.pages ?? 1,
     confidence: parsed.confidence ?? 0.8,
     reasoning: parsed.reasoning ?? "",
-    model: MODELS.SONNET,
+    model: MODELS.OPUS,
     tokensUsed:
       response.usage.input_tokens + response.usage.output_tokens,
     elapsedMs: Date.now() - t0,

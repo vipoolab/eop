@@ -17,6 +17,8 @@ export const draftCommandSchema = z.object({
   priority: z
     .enum(["LOW", "NORMAL", "HIGH", "URGENT", "CRITICAL"])
     .default("NORMAL"),
+  /** Optional: ผูกกับภารกิจ — AI ใช้ goals/scope/KPIs เป็น context (TOR ๒.๑.๑) */
+  missionId: z.string().nullable().optional(),
 });
 
 export type DraftCommandInput = z.infer<typeof draftCommandSchema>;

@@ -295,7 +295,7 @@ export async function semanticSearch(query: string): Promise<{
 }`;
 
   const response = await getClaude().messages.create({
-    model: MODELS.HAIKU,
+    model: MODELS.OPUS,
     max_tokens: 2048,
     system: systemPrompt,
     messages: [

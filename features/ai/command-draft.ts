@@ -16,6 +16,20 @@ export interface DraftInput {
   context?: string;
   /** ลำดับความสำคัญ (ส่งผลต่อโทนข้อความ) */
   priority?: "LOW" | "NORMAL" | "HIGH" | "URGENT" | "CRITICAL";
+  /** TOR ๒.๒.๒ — History Data: คลังคำสั่งเก่าที่คล้ายกัน (excerpt) */
+  historyExcerpts?: Array<{
+    docNo: string;
+    subject: string;
+    bodySnippet: string;
+  }>;
+  /** TOR ๒.๑.๑ — Mission context (optional): goals/scope/KPIs ของภารกิจที่ผูก */
+  missionContext?: {
+    code: string;
+    title: string;
+    goals: string[];
+    scope: string | null;
+    kpiNames: string[];
+  };
 }
 
 export interface DraftOutput {
@@ -24,6 +38,10 @@ export interface DraftOutput {
   body: string;
   model: string;
   tokensUsed: number;
+  /** จำนวนคำสั่งเก่าที่ AI ใช้เป็น context */
+  historyUsed: number;
+  /** มี Mission context ที่ใช้หรือไม่ (TOR ๒.๑.๑) */
+  missionContextUsed: boolean;
 }
 
 const SYSTEM_PROMPT = `คุณเป็นเจ้าหน้าที่กองยุทธศาสตร์ตำรวจ (สยศ.ตร.) ที่เชี่ยวชาญในการร่างหนังสือสั่งการราชการตามมาตรฐานสำนักงานปลัดสำนักนายกรัฐมนตรี
@@ -50,6 +68,42 @@ function buildUserPrompt(input: DraftInput): string {
       ? "โทนเร่งด่วน — เน้นคำว่า 'โดยด่วน' 'เร่งดำเนินการ'"
       : "โทนปกติ";
 
+  // History Data section (TOR ๒.๒.๒)
+  const historySection =
+    input.historyExcerpts && input.historyExcerpts.length > 0
+      ? [
+          ``,
+          `# คลังคำสั่งเก่าที่คล้ายกัน (สำหรับศึกษารูปแบบและ Keywords)`,
+          ...input.historyExcerpts.map(
+            (h, i) =>
+              `[${i + 1}] ${h.docNo} · ${h.subject}\n${h.bodySnippet.slice(0, 400)}`
+          ),
+          ``,
+          `→ ใช้รูปแบบและภาษาราชการในตัวอย่างเป็นแนวทาง แต่ปรับเนื้อหาให้ตรงข้อมูลที่ระบุข้างต้น`,
+        ].join("\n")
+      : "";
+
+  // Mission context (TOR ๒.๑.๑ — AI-Assisted Command Drafting จากภารกิจ)
+  const missionSection = input.missionContext
+    ? [
+        ``,
+        `# ภารกิจที่ผูก (สำหรับ AI ใช้เป็นบริบทร่างคำสั่ง)`,
+        `รหัส: ${input.missionContext.code}`,
+        `ชื่อ: ${input.missionContext.title}`,
+        input.missionContext.goals.length > 0
+          ? `เป้าหมาย:\n${input.missionContext.goals.map((g) => `- ${g}`).join("\n")}`
+          : "",
+        input.missionContext.scope ? `ขอบเขต: ${input.missionContext.scope}` : "",
+        input.missionContext.kpiNames.length > 0
+          ? `ตัวชี้วัด:\n${input.missionContext.kpiNames.map((k) => `- ${k}`).join("\n")}`
+          : "",
+        ``,
+        `→ ให้คำสั่งสอดคล้องกับเป้าหมายและตัวชี้วัดของภารกิจนี้`,
+      ]
+        .filter(Boolean)
+        .join("\n")
+    : "";
+
   return [
     `# ข้อมูลร่างคำสั่ง`,
     `**หัวเรื่อง:** ${input.subject}`,
@@ -58,6 +112,8 @@ function buildUserPrompt(input: DraftInput): string {
     input.timeframe ? `**ระยะเวลา/Deadline:** ${input.timeframe}` : "",
     input.context ? `**บริบทเพิ่มเติม:** ${input.context}` : "",
     `**ความสำคัญ:** ${input.priority ?? "NORMAL"} (${priorityNote})`,
+    missionSection,
+    historySection,
     ``,
     `กรุณาร่างคำสั่งตามมาตรฐาน — return JSON เท่านั้น`,
   ]
@@ -69,7 +125,7 @@ export async function generateCommandDraft(
   input: DraftInput
 ): Promise<DraftOutput> {
   const response = await getClaude().messages.create({
-    model: MODELS.HAIKU,
+    model: MODELS.OPUS,
     max_tokens: DEFAULT_MAX_TOKENS,
     system: SYSTEM_PROMPT,
     messages: [
@@ -96,8 +152,10 @@ export async function generateCommandDraft(
     reference: parsed.reference ?? "",
     objective: parsed.objective ?? input.objective,
     body: parsed.body ?? "",
-    model: MODELS.HAIKU,
+    model: MODELS.OPUS,
     tokensUsed:
       response.usage.input_tokens + response.usage.output_tokens,
+    historyUsed: input.historyExcerpts?.length ?? 0,
+    missionContextUsed: !!input.missionContext,
   };
 }
