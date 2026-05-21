@@ -56,9 +56,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // TOR ๘.๑๐.๓ — PDF page count guard (Vercel function timeout limit)
-  // Claude vision ใช้เวลา ~5-10s/หน้า; Vercel hobby plan timeout 60s
-  const MAX_PDF_PAGES = 5;
+  // TOR ๘.๑๐.๓ — PDF page count guard
+  // ⚠️ ใช้ Opus 4.5 → ~10-15s/หน้า
+  // ⚠️ Vercel hobby plan function timeout = 60s
+  //   → realistically 3-4 หน้าต่อ request ใน production
+  //   → 30 หน้าต้องการ Vercel Pro ($20/mo) + maxDuration 300s
+  //     หรือ split client-side เป็น batch
+  const MAX_PDF_PAGES = 30;
   if (file.type === "application/pdf") {
     try {
       const { PDFDocument } = await import("pdf-lib");

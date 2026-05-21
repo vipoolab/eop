@@ -93,7 +93,9 @@ export function OcrForm() {
         // Non-JSON response → likely Vercel timeout or runtime error
         if (res.status === 504 || /timeout|timed out/i.test(raw)) {
           throw new Error(
-            "OCR ใช้เวลานานเกินไป — Vercel function timeout (สูงสุด 60 วินาที). ลองใช้ PDF ที่หน้าน้อยกว่า (≤ 3 หน้า) หรือไฟล์รูปเดี่ยว"
+            "OCR ใช้เวลานานเกินไป — Vercel function timeout (Hobby plan สูงสุด 60 วินาที). " +
+              "Opus 4.5 ใช้เวลา ~10-15 วินาที/หน้า → realistic limit ~3-4 หน้าต่อ request. " +
+              "ถ้าอยาก OCR 30 หน้าใน production ต้องอัพเกรด Vercel Pro plan"
           );
         }
         throw new Error(
