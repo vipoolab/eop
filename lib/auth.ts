@@ -48,7 +48,12 @@ declare module "next-auth" {
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
+  otp: z.string().optional().nullable(),
 });
+
+// TOR ๗.๑.๖ — Failed login lockout
+const LOCKOUT_THRESHOLD = 5;
+const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
 
 // JWT refresh interval — re-fetch user data from DB at most every 60s
 const REFRESH_TTL_MS = 60 * 1000;
@@ -69,34 +74,140 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        otp: { label: "MFA Code", type: "text" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         const parsed = loginSchema.safeParse(credentials);
-        if (!parsed.success) return null;
+        if (!parsed.success || !parsed.data) return null;
+        const data = parsed.data; // narrowed
+
+        const headers = (req?.headers as Headers | undefined) ?? null;
+        const ipAddress =
+          headers?.get?.("x-forwarded-for")?.split(",")[0]?.trim() ??
+          headers?.get?.("x-real-ip") ??
+          "unknown";
+        const userAgent = headers?.get?.("user-agent") ?? null;
 
         const user = await prisma.user.findUnique({
-          where: { email: parsed.data.email },
+          where: { email: data.email },
           include: { unit: true },
         });
 
-        if (!user || !user.active) return null;
+        // Helper: log failed attempt
+        async function logFail(reason: "WRONG_PASS" | "USER_LOCKED" | "MFA_FAIL" | "UNKNOWN_USER" | "ACCOUNT_DISABLED") {
+          await prisma.loginAttempt.create({
+            data: {
+              email: data.email,
+              success: false,
+              failReason: reason,
+              ipAddress,
+              userAgent,
+            },
+          });
+        }
 
+        if (!user) {
+          await logFail("UNKNOWN_USER");
+          return null;
+        }
+
+        if (!user.active) {
+          await logFail("ACCOUNT_DISABLED");
+          return null;
+        }
+
+        // ─── Check lockout (TOR ๗.๑.๖) ───
+        if (user.lockedUntil && user.lockedUntil > new Date()) {
+          await logFail("USER_LOCKED");
+          return null;
+        }
+
+        // ─── Verify password ───
         const valid = await bcrypt.compare(
-          parsed.data.password,
+          data.password,
           user.passwordHash
         );
 
         if (!valid) {
+          // Increment failed count + maybe lock
+          const newCount = user.failedLoginCount + 1;
+          const shouldLock = newCount >= LOCKOUT_THRESHOLD;
+          await prisma.user.update({
+            where: { id: user.id },
+            data: {
+              failedLoginCount: newCount,
+              lockedUntil: shouldLock ? new Date(Date.now() + LOCKOUT_DURATION_MS) : null,
+            },
+          });
+          await logFail("WRONG_PASS");
           await prisma.auditLog.create({
             data: {
               userId: user.id,
-              action: "auth.login.failed",
+              action: shouldLock ? "auth.account.locked" : "auth.login.failed",
               target: `user:${user.id}`,
-              details: { email: user.email, reason: "invalid_password" },
+              details: { email: user.email, reason: "invalid_password", failedCount: newCount, locked: shouldLock },
+              ip: ipAddress,
             },
           });
           return null;
         }
+
+        // ─── Verify MFA if enabled (TOR ๗.๑.๒) ───
+        if (user.mfaEnabled && user.mfaSecret) {
+          if (!data.otp) {
+            // Special signal: password OK but OTP required
+            // Client will detect via failReason='MFA_FAIL' in LoginAttempt + redirect
+            await logFail("MFA_FAIL");
+            return null;
+          }
+          const { verifyTotp, hashRecoveryCode } = await import("@/features/security/mfa");
+          let mfaOk = verifyTotp(data.otp, user.mfaSecret);
+          if (!mfaOk && user.mfaRecoveryCodes.length > 0) {
+            // Try recovery code
+            const codeHash = hashRecoveryCode(data.otp);
+            if (user.mfaRecoveryCodes.includes(codeHash)) {
+              mfaOk = true;
+              // Consume the recovery code
+              await prisma.user.update({
+                where: { id: user.id },
+                data: {
+                  mfaRecoveryCodes: user.mfaRecoveryCodes.filter((c) => c !== codeHash),
+                },
+              });
+              await prisma.auditLog.create({
+                data: {
+                  userId: user.id,
+                  action: "user.mfa.recovery.used",
+                  target: `user:${user.id}`,
+                  ip: ipAddress,
+                },
+              });
+            }
+          }
+          if (!mfaOk) {
+            await logFail("MFA_FAIL");
+            return null;
+          }
+        }
+
+        // ─── Success — reset lockout + log ───
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            failedLoginCount: 0,
+            lockedUntil: null,
+            lastLoginAt: new Date(),
+          },
+        });
+
+        await prisma.loginAttempt.create({
+          data: {
+            email: user.email,
+            success: true,
+            ipAddress,
+            userAgent,
+          },
+        });
 
         await prisma.auditLog.create({
           data: {
@@ -107,7 +218,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               email: user.email,
               role: user.role,
               unitCode: user.unit?.code,
+              mfaUsed: user.mfaEnabled,
             },
+            ip: ipAddress,
+            ua: userAgent,
           },
         });
 
@@ -154,15 +268,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           where: { id: t.id },
           select: { name: true, rank: true, role: true, active: true },
         });
-        if (fresh) {
-          if (!fresh.active) {
-            // Force re-login if deactivated
-            return null as never;
-          }
-          t.name = fresh.name;
-          t.rank = fresh.rank;
-          t.role = fresh.role as Role;
+        if (!fresh || !fresh.active) {
+          // User no longer exists (e.g. DB was reset) OR deactivated → invalidate session
+          return null as never;
         }
+        t.name = fresh.name;
+        t.rank = fresh.rank;
+        t.role = fresh.role as Role;
         t.refreshAt = Date.now() + REFRESH_TTL_MS;
       }
 

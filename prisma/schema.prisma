@@ -434,6 +434,12 @@ model User {
   passwordHash String
   mfaEnabled   Boolean   @default(false)
   mfaSecret    String?
+  mfaRecoveryCodes   String[]  @default([])  // hashed recovery codes (one-time use)
+  mfaEnabledAt       DateTime?
+  mustChangePassword Boolean   @default(false)
+  passwordChangedAt  DateTime?
+  failedLoginCount   Int       @default(0)
+  lockedUntil        DateTime?
   unitId       String?
   unit         Unit?     @relation(fields: [unitId], references: [id])
   role         UserRole  @default(STAFF)
