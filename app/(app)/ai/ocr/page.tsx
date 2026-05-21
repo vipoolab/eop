@@ -18,7 +18,7 @@ export default async function OcrPage() {
         icon={ScanText}
         eyebrow="Data & AI · OCR"
         title="OCR ภาษาไทย — สกัดข้อความจากภาพ"
-        description="อัปโหลดภาพเอกสาร (JPG / PNG) → AI อ่านและสกัดข้อความออกมาให้ตรวจสอบ/แก้ไข"
+        description="อัปโหลดภาพ (JPG/PNG) หรือ PDF (สูงสุด 5 หน้า) → AI อ่านและสกัดข้อความให้ตรวจสอบ/แก้ไข"
         live
       />
 

@@ -58,8 +58,8 @@ export default async function DocumentsHubPage() {
             </span>
           </div>
           <p className="text-sm text-slate-600 mb-4 leading-relaxed">
-            อัปโหลด PDF / รูปภาพ → AI อ่านภาษาไทย → แสดงเทียบกับต้นฉบับ (Preview)
-            + <strong>แก้ไขข้อความที่อ่านได้</strong>
+            อัปโหลด PDF (≤ 5 หน้า) หรือรูป → AI อ่านภาษาไทย → แสดงเทียบกับต้นฉบับ +{" "}
+            <strong>แก้ไขข้อความที่อ่านได้</strong>
           </p>
           <div className="flex items-center justify-between text-[11px] text-slate-500">
             <span>

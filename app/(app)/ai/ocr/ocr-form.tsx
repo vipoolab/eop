@@ -84,9 +84,24 @@ export function OcrForm() {
         body: fd,
       });
 
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || "OCR ไม่สำเร็จ");
+      // Parse JSON safely — Vercel timeouts/errors return non-JSON text
+      const raw = await res.text();
+      let data: { success?: boolean; message?: string; data?: OcrResult & { filename: string; size: number } } | null = null;
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        // Non-JSON response → likely Vercel timeout or runtime error
+        if (res.status === 504 || /timeout|timed out/i.test(raw)) {
+          throw new Error(
+            "OCR ใช้เวลานานเกินไป — Vercel function timeout (สูงสุด 60 วินาที). ลองใช้ PDF ที่หน้าน้อยกว่า (≤ 3 หน้า) หรือไฟล์รูปเดี่ยว"
+          );
+        }
+        throw new Error(
+          `Server error ${res.status} — กรุณาลองใหม่ (อาจเป็น Vercel timeout จาก PDF ยาว)`
+        );
+      }
+      if (!res.ok || !data?.success || !data.data) {
+        throw new Error(data?.message || "OCR ไม่สำเร็จ");
       }
 
       setResult(data.data);

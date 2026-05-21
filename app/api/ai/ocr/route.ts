@@ -56,6 +56,29 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // TOR ๘.๑๐.๓ — PDF page count guard (Vercel function timeout limit)
+  // Claude vision ใช้เวลา ~5-10s/หน้า; Vercel hobby plan timeout 60s
+  const MAX_PDF_PAGES = 5;
+  if (file.type === "application/pdf") {
+    try {
+      const { PDFDocument } = await import("pdf-lib");
+      const tmp = await PDFDocument.load(await file.arrayBuffer());
+      const pageCount = tmp.getPageCount();
+      if (pageCount > MAX_PDF_PAGES) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: `PDF มี ${pageCount} หน้า — เกินขีดจำกัด ${MAX_PDF_PAGES} หน้าต่อครั้ง (กันเซิร์ฟเวอร์ timeout). กรุณาแยกไฟล์เป็นชุดที่หน้าน้อยกว่า`,
+          },
+          { status: 400 }
+        );
+      }
+    } catch (e) {
+      console.error("PDF page check failed:", e);
+      // Allow to continue — Claude may still handle it
+    }
+  }
+
   try {
     const buffer = Buffer.from(await file.arrayBuffer());
     const result = await performOcr({
