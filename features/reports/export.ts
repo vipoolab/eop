@@ -16,6 +16,11 @@ export interface ReportData {
   indicators: number;
   preparedBy?: string;
   preparedAt?: Date;
+  // e-Signature (TOR ๓.๑ — ผบ.หน่วยลงนาม)
+  approverName?: string | null;
+  approvedAt?: Date | null;
+  signatureData?: string | null; // JSON {type:"typed",name:...} or data:image
+  signatureIp?: string | null;
 }
 
 let cachedFontBytes: Buffer | null = null;
@@ -142,29 +147,108 @@ export async function generateReportPdf(data: ReportData): Promise<Uint8Array> {
     { x: 50, y: cursorY, size: 10, font: thaiFont, color: text }
   );
 
-  // Signature placeholders
-  cursorY -= 50;
-  page.drawText("ลงนาม", {
+  // Signature blocks (TOR ๓.๑ — ผบ.หน่วยลงนาม)
+  cursorY -= 60;
+
+  // — Preparer block (left) —
+  page.drawText("ผู้จัดทำ", {
     x: 50, y: cursorY, size: 10, font: thaiFont, color: text,
   });
+  if (data.preparedBy) {
+    page.drawText(data.preparedBy, {
+      x: 50, y: cursorY - 18, size: 9, font: thaiFont, color: text,
+    });
+  }
   page.drawLine({
-    start: { x: 50, y: cursorY - 5 }, end: { x: 250, y: cursorY - 5 },
+    start: { x: 50, y: cursorY - 35 }, end: { x: 250, y: cursorY - 35 },
     color: muted, thickness: 0.5,
   });
-  page.drawText("ผู้จัดทำ", {
-    x: 130, y: cursorY - 18, size: 8, font: thaiFont, color: muted,
+  page.drawText("(ลายมือชื่อ)", {
+    x: 130, y: cursorY - 48, size: 8, font: thaiFont, color: muted,
   });
 
-  page.drawText("ลงนาม", {
+  // — Approver block (right) — render e-Sign if approved
+  page.drawText("ผู้อนุมัติ + ลงนามอิเล็กทรอนิกส์", {
     x: 320, y: cursorY, size: 10, font: thaiFont, color: text,
   });
-  page.drawLine({
-    start: { x: 320, y: cursorY - 5 }, end: { x: 540, y: cursorY - 5 },
-    color: muted, thickness: 0.5,
-  });
-  page.drawText("ผู้อนุมัติ", {
-    x: 400, y: cursorY - 18, size: 8, font: thaiFont, color: muted,
-  });
+
+  if (data.signatureData && data.approverName) {
+    let typedName: string | null = null;
+    let imageDataUrl: string | null = null;
+    try {
+      const parsed = JSON.parse(data.signatureData);
+      if (parsed.type === "typed" && typeof parsed.name === "string") {
+        typedName = parsed.name;
+      }
+    } catch {
+      if (data.signatureData.startsWith("data:image")) {
+        imageDataUrl = data.signatureData;
+      }
+    }
+
+    if (typedName) {
+      // Render typed name in italic style
+      page.drawText(typedName, {
+        x: 320, y: cursorY - 22, size: 14, font: thaiFont, color: navy,
+      });
+    } else if (imageDataUrl) {
+      // Embed PNG signature
+      try {
+        const base64 = imageDataUrl.split(",")[1];
+        const bytes = Uint8Array.from(Buffer.from(base64, "base64"));
+        const pngImage = await pdfDoc.embedPng(bytes);
+        const dims = pngImage.scale(0.35);
+        page.drawImage(pngImage, {
+          x: 320,
+          y: cursorY - 5 - dims.height,
+          width: Math.min(dims.width, 220),
+          height: Math.min(dims.height, 40),
+        });
+      } catch {
+        page.drawText("(ลายเซ็นภาพ)", {
+          x: 320, y: cursorY - 22, size: 9, font: thaiFont, color: muted,
+        });
+      }
+    }
+
+    // Approver name + date
+    page.drawText(data.approverName, {
+      x: 320, y: cursorY - 48, size: 9, font: thaiFont, color: text,
+    });
+    if (data.approvedAt) {
+      page.drawText(
+        `ลงนามเมื่อ ${data.approvedAt.toLocaleDateString("th-TH", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        })} ${data.approvedAt.toLocaleTimeString("th-TH", {
+          hour: "2-digit",
+          minute: "2-digit",
+        })}`,
+        {
+          x: 320,
+          y: cursorY - 60,
+          size: 7,
+          font: thaiFont,
+          color: muted,
+        }
+      );
+    }
+    if (data.signatureIp) {
+      page.drawText(`IP: ${data.signatureIp}`, {
+        x: 320, y: cursorY - 70, size: 6, font: thaiFont, color: muted,
+      });
+    }
+  } else {
+    // Placeholder line if not signed yet
+    page.drawLine({
+      start: { x: 320, y: cursorY - 35 }, end: { x: 540, y: cursorY - 35 },
+      color: muted, thickness: 0.5,
+    });
+    page.drawText("(ยังไม่ลงนาม)", {
+      x: 390, y: cursorY - 48, size: 8, font: thaiFont, color: muted,
+    });
+  }
 
   // Footer
   page.drawText(

@@ -22,6 +22,8 @@ import {
   Smartphone,
 } from "lucide-react";
 
+export type Role = "ADMIN" | "COMMANDER" | "STAFF" | "AUDITOR" | "VIEWER";
+
 export interface NavItem {
   label: string;
   href: string;
@@ -30,6 +32,8 @@ export interface NavItem {
   description: string;
   live?: boolean;
   poc?: number;
+  /** Roles ที่เห็นเมนูนี้ — ถ้าไม่ระบุ = ทุกคนเห็น */
+  roles?: Role[];
 }
 
 export interface NavSection {
@@ -37,6 +41,17 @@ export interface NavSection {
   systemNo?: string;
   torRef?: string;
   items: NavItem[];
+}
+
+/** Filter sidebar sections+items ตาม role ของ user */
+export function filterNavForRole(role: Role | undefined, sections: NavSection[]): NavSection[] {
+  if (!role) return [];
+  return sections
+    .map((s) => ({
+      ...s,
+      items: s.items.filter((i) => !i.roles || i.roles.includes(role)),
+    }))
+    .filter((s) => s.items.length > 0);
 }
 
 export const navSections: NavSection[] = [
@@ -80,11 +95,20 @@ export const navSections: NavSection[] = [
     torRef: "5.4.2",
     items: [
       {
+        label: "วาระงาน (Agenda)",
+        href: "/agenda/agendas",
+        icon: ListChecks,
+        torRef: "2.1",
+        description: "บริหารวาระประชุม/พิธีการ/ตรวจเยี่ยม/กำหนดรายงาน",
+        roles: ["ADMIN", "COMMANDER", "STAFF", "AUDITOR", "VIEWER"],
+      },
+      {
         label: "Mission & Agenda",
         href: "/agenda/missions",
         icon: ListChecks,
         torRef: "2.1",
         description: "บริหารวาระและภารกิจสำคัญของ ตร.",
+        roles: ["ADMIN", "COMMANDER", "STAFF", "AUDITOR", "VIEWER"],
       },
       {
         label: "AI ร่างหนังสือสั่งการ",
@@ -94,6 +118,7 @@ export const navSections: NavSection[] = [
         description: "Generative AI ช่วยร่างหนังสือราชการจาก keyword",
         live: true,
         poc: 1,
+        roles: ["ADMIN", "COMMANDER", "STAFF"],
       },
       {
         label: "Dynamic Form Builder",
@@ -101,6 +126,15 @@ export const navSections: NavSection[] = [
         icon: FormInput,
         torRef: "2.3",
         description: "สร้างแบบฟอร์มรายงานแบบ Drag & Drop No-Code",
+        roles: ["ADMIN", "COMMANDER"],
+      },
+      {
+        label: "กรอกแบบฟอร์ม",
+        href: "/agenda/forms",
+        icon: FormInput,
+        torRef: "2.3",
+        description: "เลือกแบบฟอร์มเพื่อกรอกข้อมูลจริง + ดูประวัติการกรอก",
+        roles: ["ADMIN", "COMMANDER", "STAFF"],
       },
     ],
   },
@@ -110,18 +144,33 @@ export const navSections: NavSection[] = [
     torRef: "5.4.3",
     items: [
       {
-        label: "Compliance Reports",
-        href: "/compliance/reports",
+        label: "ภาพรวมการประเมิน",
+        href: "/compliance",
         icon: ShieldCheck,
         torRef: "3.1",
-        description: "ก.พ.ร. / ITA / PMQA — รายงานอัตโนมัติ",
+        description: "Dashboard ก.พ.ร./ITA/PMQA — คะแนน + Trend + Deadline",
       },
       {
-        label: "Self-Assessment",
-        href: "/compliance/self-assessment",
+        label: "Compliance Reports",
+        href: "/compliance/reports",
         icon: ClipboardCheck,
-        torRef: "3.2",
-        description: "ประเมินตนเองก่อนส่งหน่วยประเมิน",
+        torRef: "3.1",
+        description: "ก.พ.ร./ITA/PMQA — รายงานอัตโนมัติ + Self-Assessment",
+      },
+      {
+        label: "แบบฟอร์มมาตรฐาน (Templates)",
+        href: "/compliance/templates",
+        icon: FileEdit,
+        torRef: "3.1",
+        description: "สร้าง/แก้/clone template — Builder รายข้อ checklist",
+        roles: ["ADMIN", "COMMANDER"],
+      },
+      {
+        label: "คลังหลักฐาน",
+        href: "/compliance/evidence",
+        icon: ClipboardCheck,
+        torRef: "3.1",
+        description: "เอกสารหลักฐาน Compliance — ใช้ซ้ำได้ปีต่อปี",
       },
     ],
   },
@@ -158,6 +207,7 @@ export const navSections: NavSection[] = [
         torRef: "5.1 - 5.10",
         description: "Virtual Screens + Infinite Canvas + GIS Heatmap 360°",
         poc: 4,
+        roles: ["ADMIN", "COMMANDER"],
       },
     ],
   },
@@ -174,6 +224,7 @@ export const navSections: NavSection[] = [
         description: "AI จำแนกเอกสาร 6 หมวด (ยศ./ผบ./มค./มข./วจ./อจ.)",
         live: true,
         poc: 2,
+        roles: ["ADMIN", "COMMANDER", "STAFF", "AUDITOR"],
       },
       {
         label: "OCR Demo",
@@ -183,6 +234,7 @@ export const navSections: NavSection[] = [
         description: "OCR ภาษาไทย เป้า CER ≤ 10%",
         live: true,
         poc: 3,
+        roles: ["ADMIN", "COMMANDER", "STAFF", "AUDITOR"],
       },
       {
         label: "Intelligent Search",
@@ -191,6 +243,7 @@ export const navSections: NavSection[] = [
         torRef: "8.10.12",
         description: "ค้นหา 4 โหมด — Basic / Advanced / Full-text / Semantic",
         live: true,
+        roles: ["ADMIN", "COMMANDER", "STAFF", "AUDITOR"],
       },
       {
         label: "Predictive Analytics",
@@ -198,6 +251,7 @@ export const navSections: NavSection[] = [
         icon: Sparkles,
         torRef: "6.1 / 6.2",
         description: "พยากรณ์พื้นที่/เวลาเสี่ยง + Executive Summary AI",
+        roles: ["ADMIN", "COMMANDER", "STAFF", "AUDITOR"],
       },
       {
         label: "Dashboards (5 ประเภท)",
@@ -219,6 +273,7 @@ export const navSections: NavSection[] = [
         icon: Lock,
         torRef: "7.2 / 7.1.5",
         description: "Activity Log + Zero Trust + Encryption + SIEM",
+        roles: ["ADMIN", "AUDITOR"],
       },
       {
         label: "User & Access Management",
@@ -226,6 +281,7 @@ export const navSections: NavSection[] = [
         icon: Users,
         torRef: "7.1.1 - 7.1.3",
         description: "MFA + RBAC + SSO + บัญชีผู้ใช้",
+        roles: ["ADMIN"],
       },
     ],
   },
@@ -238,6 +294,7 @@ export const navSections: NavSection[] = [
         icon: Network,
         torRef: "5.6 / 5.7",
         description: "Hardware 9 nodes + Storage + L3 Switch + Internet 2 ชุด",
+        roles: ["ADMIN"],
       },
       {
         label: "Mobile View Demo",
@@ -245,6 +302,7 @@ export const navSections: NavSection[] = [
         icon: Smartphone,
         torRef: "8.1",
         description: "Responsive + Mobile App (iOS/Android)",
+        roles: ["ADMIN"],
       },
     ],
   },
