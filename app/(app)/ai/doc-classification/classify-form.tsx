@@ -25,16 +25,7 @@ const UNIT_CATEGORIES = [
   { code: "อจ.", name: "ฝ่ายอำนวยการ สยศ.ตร." },
 ] as const;
 
-const ACCEPTED = [
-  ".docx",
-  ".xlsx",
-  ".xls",
-  ".pdf",
-  ".jpg",
-  ".jpeg",
-  ".png",
-  ".txt",
-];
+const ACCEPTED = [".docx", ".pdf", ".jpg", ".jpeg", ".png", ".txt"];
 
 interface ClassifyResult {
   documentId: string;
@@ -141,7 +132,7 @@ export function ClassifyForm() {
             ลากไฟล์มาวางที่นี่ หรือคลิกเพื่อเลือก
           </p>
           <p className="text-xs text-slate-500 mt-1.5">
-            DOCX · XLSX · PDF · JPG · PNG · TXT (สูงสุด 10 MB)
+            DOCX · PDF · JPG · PNG · TXT (สูงสุด 10 MB)
           </p>
         </div>
 

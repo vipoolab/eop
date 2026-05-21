@@ -18,7 +18,7 @@ export default async function DocClassificationPage() {
         icon={FolderTree}
         eyebrow="Data & AI · Document Classification"
         title="AI จำแนกเอกสาร"
-        description="อัปโหลดเอกสาร (DOCX / XLSX / PDF / JPG / PNG / TXT) → AI จะจำแนกหน่วยงานเจ้าของเรื่องอัตโนมัติ"
+        description="อัปโหลดเอกสาร (DOCX / PDF / JPG / PNG / TXT) → AI จะจำแนกหน่วยงานเจ้าของเรื่องอัตโนมัติ"
         live
       />
 
