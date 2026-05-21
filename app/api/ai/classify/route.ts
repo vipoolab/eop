@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        message: `ไม่รองรับไฟล์ประเภท ${file.type} — รองรับ DOCX / XLSX / PDF / JPG / PNG / TXT`,
+        message: `ไม่รองรับไฟล์ประเภท ${file.type} — รองรับ DOCX / PDF / JPG / PNG / TXT`,
       },
       { status: 400 }
     );
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
   try {
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // 1. Extract text (for docx/xlsx/txt) or pass through (for pdf/img)
+    // 1. Extract text (for docx/txt) or pass through (for pdf/img)
     const extracted = await extractTextFromBuffer(buffer, file.type);
 
     // 2. Classify via Claude
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
         mimeType: file.type,
         size: file.size,
         storagePath: "memory:", // No actual storage in this PoC
-        uploadedBy: session.user.id,
+        uploadedById: session.user.id,
         classifiedUnit: result.unitCode,
         classificationConfidence: result.confidence,
         classificationAt: new Date(),
