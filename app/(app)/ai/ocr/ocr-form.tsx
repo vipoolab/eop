@@ -26,6 +26,7 @@ interface OcrResult {
   elapsedMs: number;
   filename: string;
   size: number;
+  pages?: number;
 }
 
 function formatSize(bytes: number): string {
@@ -44,6 +45,7 @@ export function OcrForm() {
   const [result, setResult] = useState<OcrResult | null>(null);
   const [editedText, setEditedText] = useState("");
   const [copied, setCopied] = useState(false);
+  const [progress, setProgress] = useState<{ current: number; total: number } | null>(null);
 
   function pickFile(f: File | null) {
     setFile(f);
@@ -69,49 +71,131 @@ export function OcrForm() {
     pickFile(e.dataTransfer.files?.[0] ?? null);
   }, []);
 
+  /** Send single file to /api/ai/ocr — returns parsed result */
+  async function ocrSingle(f: File): Promise<OcrResult> {
+    const fd = new FormData();
+    fd.append("file", f);
+    const res = await fetch("/api/ai/ocr", { method: "POST", body: fd });
+    const raw = await res.text();
+    let data: { success?: boolean; message?: string; data?: OcrResult } | null = null;
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      if (res.status === 504 || /timeout|timed out/i.test(raw)) {
+        throw new Error("Server timeout (60s) — Opus ใช้เวลานานเกินไปสำหรับหน้านี้");
+      }
+      throw new Error(`Server error ${res.status}`);
+    }
+    if (!res.ok || !data?.success || !data.data) {
+      throw new Error(data?.message || "OCR ไม่สำเร็จ");
+    }
+    return data.data;
+  }
+
   async function handleOcr() {
     if (!file) return;
     setLoading(true);
     setError(null);
     setResult(null);
+    setProgress(null);
 
     try {
-      const fd = new FormData();
-      fd.append("file", file);
+      // ─── Non-PDF (image) → single call ───
+      if (file.type !== "application/pdf") {
+        const out = await ocrSingle(file);
+        setResult(out);
+        setEditedText(out.text);
+        return;
+      }
 
-      const res = await fetch("/api/ai/ocr", {
-        method: "POST",
-        body: fd,
-      });
+      // ─── PDF → split in browser + process page-by-page ───
+      const { PDFDocument } = await import("pdf-lib");
+      const src = await PDFDocument.load(await file.arrayBuffer());
+      const pageCount = src.getPageCount();
 
-      // Parse JSON safely — Vercel timeouts/errors return non-JSON text
-      const raw = await res.text();
-      let data: { success?: boolean; message?: string; data?: OcrResult & { filename: string; size: number } } | null = null;
-      try {
-        data = JSON.parse(raw);
-      } catch {
-        // Non-JSON response → likely Vercel timeout or runtime error
-        if (res.status === 504 || /timeout|timed out/i.test(raw)) {
-          throw new Error(
-            "OCR ใช้เวลานานเกินไป — Vercel function timeout. " +
-              "Opus 4.5 ใช้เวลา ~10-15 วินาที/หน้า → ลอง PDF ที่หน้าน้อยกว่า (≤ 3-4 หน้า) " +
-              "หรืออัพเกรด Vercel Pro plan สำหรับ PDF ที่หน้าเยอะกว่า"
-          );
-        }
+      // Hard cap (matches backend MAX_PDF_PAGES)
+      if (pageCount > 10) {
         throw new Error(
-          `Server error ${res.status} — กรุณาลองใหม่ (อาจเป็น Vercel timeout จาก PDF ยาว)`
+          `PDF มี ${pageCount} หน้า — เกินขีดจำกัด 10 หน้า กรุณาแยกไฟล์`
         );
       }
-      if (!res.ok || !data?.success || !data.data) {
-        throw new Error(data?.message || "OCR ไม่สำเร็จ");
+
+      // If single page, just send as-is
+      if (pageCount === 1) {
+        const out = await ocrSingle(file);
+        setResult(out);
+        setEditedText(out.text);
+        return;
       }
 
-      setResult(data.data);
-      setEditedText(data.data.text);
+      // Multi-page → process each page in browser-split PDF
+      setProgress({ current: 0, total: pageCount });
+      const pageTexts: string[] = [];
+      let totalTokens = 0;
+      let totalElapsed = 0;
+      let totalLines = 0;
+      const confidences: number[] = [];
+      const failedPages: number[] = [];
+
+      const t0 = Date.now();
+      for (let i = 0; i < pageCount; i++) {
+        setProgress({ current: i + 1, total: pageCount });
+
+        try {
+          // Build single-page PDF
+          const onePage = await PDFDocument.create();
+          const [copied] = await onePage.copyPages(src, [i]);
+          onePage.addPage(copied);
+          const bytes = await onePage.save();
+          const pageFile = new File(
+            [new Blob([new Uint8Array(bytes)], { type: "application/pdf" })],
+            `page-${i + 1}.pdf`,
+            { type: "application/pdf" }
+          );
+
+          const out = await ocrSingle(pageFile);
+          pageTexts.push(`--- หน้า ${i + 1} ---\n${out.text}`);
+          totalTokens += out.tokensUsed;
+          totalLines += out.detectedLines;
+          if (typeof out.confidence === "number") confidences.push(out.confidence);
+        } catch (err) {
+          failedPages.push(i + 1);
+          pageTexts.push(
+            `--- หน้า ${i + 1} ---\n[OCR ล้มเหลว: ${err instanceof Error ? err.message : "unknown"}]`
+          );
+        }
+      }
+      totalElapsed = Date.now() - t0;
+
+      const aggregated: OcrResult = {
+        text: pageTexts.join("\n\n"),
+        detectedLines: totalLines,
+        pages: pageCount,
+        confidence:
+          confidences.length > 0
+            ? confidences.reduce((a, b) => a + b, 0) / confidences.length
+            : 0.8,
+        reasoning:
+          failedPages.length > 0
+            ? `OCR สำเร็จ ${pageCount - failedPages.length}/${pageCount} หน้า · ล้มเหลวหน้า: ${failedPages.join(", ")}`
+            : `OCR ครบ ${pageCount} หน้า`,
+        model: "claude-opus-4-5",
+        tokensUsed: totalTokens,
+        elapsedMs: totalElapsed,
+        filename: file.name,
+        size: file.size,
+      };
+
+      setResult(aggregated);
+      setEditedText(aggregated.text);
+      if (failedPages.length > 0) {
+        setError(`⚠️ บางหน้า OCR ล้มเหลว (หน้า: ${failedPages.join(", ")}) — text รวมข้อความที่อ่านได้แล้ว`);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "เกิดข้อผิดพลาด");
     } finally {
       setLoading(false);
+      setProgress(null);
     }
   }
 
@@ -209,7 +293,13 @@ export function OcrForm() {
                 {loading ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    AI กำลังอ่านข้อความ...
+                    {progress ? (
+                      <span>
+                        AI อ่านหน้า {progress.current}/{progress.total}...
+                      </span>
+                    ) : (
+                      "AI กำลังอ่านข้อความ..."
+                    )}
                   </>
                 ) : (
                   <>
@@ -218,6 +308,21 @@ export function OcrForm() {
                   </>
                 )}
               </button>
+
+              {/* Progress bar (only for multi-page PDF) */}
+              {loading && progress && progress.total > 1 && (
+                <div className="mt-2">
+                  <div className="h-1.5 bg-slate-200 rounded overflow-hidden">
+                    <div
+                      className="h-full bg-blue-600 transition-all duration-300"
+                      style={{ width: `${(progress.current / progress.total) * 100}%` }}
+                    />
+                  </div>
+                  <div className="text-[10px] text-slate-500 mt-1 text-center">
+                    {progress.current} / {progress.total} หน้า · ~10-15 วินาที/หน้า
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
