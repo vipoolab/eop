@@ -1,0 +1,229 @@
+{
+  "collection": "Thai Royal Police Command Letters — Training Dataset",
+  "collected_at": "2026-05-25",
+  "purpose": "AI training data for EOP PoC — Command Drafting, Document Classification, OCR",
+  "license": "Public domain (Royal Thai Police official website publications)",
+  "total_files": 22,
+  "total_size_mb": 57,
+  "documents": [
+    {
+      "category": "คำสั่ง ตร.",
+      "title": "คำสั่ง ตร. ที่ 254/2567 — กำหนดลักษณะงานและการแบ่งงาน",
+      "filename": "1-คำสั่ง-ตร/คำสั่ง-ตร-254-2567-กำหนดลักษณะงาน.pdf",
+      "source_url": "https://human.police.go.th/wp-content/uploads/2024/05/...254-2567...pdf",
+      "size_bytes": 1986683,
+      "issuing_unit": "ตร.",
+      "doc_number": "254/2567",
+      "doc_year_be": 2567,
+      "use_cases": ["AI Command Drafter format", "Doc Classification: ผบ."]
+    },
+    {
+      "category": "คำสั่ง ตร.",
+      "title": "คำสั่ง ตร. ที่ 419/2556 — เกี่ยวกับการสอบสวน (Investigation Procedure)",
+      "filename": "1-คำสั่ง-ตร/คำสั่ง-ตร-419-2556-การสอบสวน.pdf",
+      "source_url": "https://www.nimitmaipolice.com/wp-content/uploads/2023/11/คำสั่ง419-2556.pdf",
+      "size_bytes": 5496340,
+      "issuing_unit": "ตร.",
+      "doc_number": "419/2556",
+      "doc_year_be": 2556,
+      "use_cases": ["AI Command Drafter format", "OCR (scanned, large)", "Doc Classification: มค."]
+    },
+    {
+      "category": "คำสั่ง ตร.",
+      "title": "คำสั่ง ตร. ที่ 468/2565 — การรับแจ้งความ (compact)",
+      "filename": "1-คำสั่ง-ตร/คำสั่ง-ตร-468-2565-การรับแจ้ง.pdf",
+      "source_url": "https://chorakaenoi.metro.police.go.th/ckn/wp-content/uploads/2023/05/015...468-2565...pdf",
+      "size_bytes": 161627,
+      "issuing_unit": "ตร.",
+      "doc_number": "468/2565",
+      "doc_year_be": 2565,
+      "use_cases": ["AI Command Drafter format", "Doc Classification: ผบ."]
+    },
+    {
+      "category": "คำสั่ง ตร.",
+      "title": "คำสั่ง ตร. ที่ 468/2565 — การรับแจ้งเหตุ (full scan)",
+      "filename": "1-คำสั่ง-ตร/คำสั่ง-468-2565-รับแจ้งเหตุ.pdf",
+      "source_url": "https://image.makewebeasy.net/makeweb/0/wi57MnqbR/Document/O15_คำสั่ง_ตร_ที่_468_2565...pdf",
+      "size_bytes": 6773387,
+      "issuing_unit": "ตร.",
+      "doc_number": "468/2565",
+      "doc_year_be": 2565,
+      "use_cases": ["OCR (scanned)", "Doc Classification: ผบ."]
+    },
+    {
+      "category": "คำสั่ง ตร.",
+      "title": "คำสั่ง ตร. ที่ 551/2566 — การบันทึกภาพการปฏิบัติงาน",
+      "filename": "1-คำสั่ง-ตร/คำสั่ง-ตร-551-2566-การบันทึกภาพ.pdf",
+      "source_url": "https://legal.police.go.th/wp-content/uploads/2024/02/ตร.ที่_551-2566.pdf",
+      "size_bytes": 4928456,
+      "issuing_unit": "ตร.",
+      "doc_number": "551/2566",
+      "doc_year_be": 2566,
+      "use_cases": ["AI Command Drafter format", "OCR (scanned)", "Doc Classification: ผบ."]
+    },
+    {
+      "category": "คำสั่ง ตร.",
+      "title": "คำสั่ง ตร. ที่ 577/2567 — ให้ข้าราชการตำรวจรักษาราชการแทน",
+      "filename": "1-คำสั่ง-ตร/คำสั่ง-ตร-577-2567-ให้รักษาราชการแทน.pdf",
+      "source_url": "https://human.police.go.th/wp-content/uploads/2024/11/คำสั่ง-ตร.-ที่-577.67....pdf",
+      "size_bytes": 90242,
+      "issuing_unit": "ตร.",
+      "doc_number": "577/2567",
+      "doc_year_be": 2567,
+      "use_cases": ["AI Command Drafter format (personnel)", "Doc Classification: ผบ."]
+    },
+    {
+      "category": "คำสั่ง ตร.",
+      "title": "คำสั่ง ตร. ที่ 62/2566",
+      "filename": "1-คำสั่ง-ตร/คำสั่ง-ตร-62-2566.pdf",
+      "source_url": "https://mueang.kanchanaburi.police.go.th/wp-content/uploads/2025/03/...62-2566.pdf",
+      "size_bytes": 77560,
+      "issuing_unit": "ตร.",
+      "doc_number": "62/2566",
+      "doc_year_be": 2566,
+      "use_cases": ["AI Command Drafter format"]
+    },
+    {
+      "category": "คำสั่ง ตร.",
+      "title": "คำสั่ง ตร. ที่ 732/2566 — การลดขั้นตอนทางธุรการ",
+      "filename": "1-คำสั่ง-ตร/คำสั่ง-ตร-732-2566-ลดขั้นตอนธุรการ.pdf",
+      "source_url": "https://doembangnangbuat.suphanburi.police.go.th/wp-content/uploads/2025/03/O10-E-Service.pdf",
+      "size_bytes": 131813,
+      "issuing_unit": "ตร.",
+      "doc_number": "732/2566",
+      "doc_year_be": 2566,
+      "use_cases": ["AI Command Drafter format", "Doc Classification: อจ."]
+    },
+    {
+      "category": "คำสั่ง ตร.",
+      "title": "คำสั่ง ตร. ที่ 86/2567 — จัดตั้งศูนย์อาชญากรรมศึกษา",
+      "filename": "1-คำสั่ง-ตร/คำสั่ง-ตร-86-2567-จัดตั้งศูนย์อาชญากรรม.pdf",
+      "source_url": "https://nathawi.songkhla.police.go.th/wp-content/uploads/2025/04/3-คำสั่ง-ตร.ที่-86-2567...pdf",
+      "size_bytes": 1656112,
+      "issuing_unit": "ตร.",
+      "doc_number": "86/2567",
+      "doc_year_be": 2567,
+      "use_cases": ["AI Command Drafter format", "Doc Classification: วจ."]
+    },
+    {
+      "category": "คำสั่งภาค",
+      "title": "คำสั่งตำรวจภูธรภาค ๔ ที่ 852/2566 — แต่งตั้ง สต.ต.สุรเดช",
+      "filename": "1-คำสั่ง-ตร/คำสั่ง-ภาค4-852-2566.pdf",
+      "source_url": "https://nonsaat.udonthani.police.go.th/wp-content/uploads/2023/07/สำเนาคำสั่ง-ภ.4-ที่-852.2566.pdf",
+      "size_bytes": 532414,
+      "issuing_unit": "ภ.4",
+      "doc_number": "852/2566",
+      "doc_year_be": 2566,
+      "use_cases": ["AI Command Drafter format (regional level)"]
+    },
+    {
+      "category": "คำสั่งจังหวัด",
+      "title": "คำสั่ง ภ.จว.ชัยภูมิ ที่ 40/2567",
+      "filename": "1-คำสั่ง-ตร/คำสั่ง-ภจว-ชัยภูมิ-40-2567.pdf",
+      "source_url": "https://rayongtouristpolice.com/wp-content/uploads/2024/02/คำสั่ง-ภ.จว.ชัยภูมิ-ที่-40.2567.pdf",
+      "size_bytes": 213824,
+      "issuing_unit": "ภ.จว.ชัยภูมิ",
+      "doc_number": "40/2567",
+      "doc_year_be": 2567,
+      "use_cases": ["AI Command Drafter format (provincial level)"]
+    },
+    {
+      "category": "คำสั่งสถานี",
+      "title": "คำสั่ง สน.บางคอแหลม ที่ 89/2566 — แต่งตั้งกรรมการคัดเลือก",
+      "filename": "1-คำสั่ง-ตร/คำสั่ง-สน-บางคอแหลม-89-2566.pdf",
+      "source_url": "https://buppharam.metro.police.go.th/wp-content/uploads/2024/04/คำสั่ง-แต่งตั้งขรก.ตร.เก็บรักษากุญแจ.pdf",
+      "size_bytes": 75018,
+      "issuing_unit": "สน.บางคอแหลม",
+      "doc_number": "89/2566",
+      "doc_year_be": 2566,
+      "use_cases": ["AI Command Drafter format (station level)"]
+    },
+    {
+      "category": "คำสั่งสถานี",
+      "title": "คำสั่ง สน.บางซื่อ ที่ 6/2567 — การตั้งจุดตรวจ",
+      "filename": "1-คำสั่ง-ตร/คำสั่ง-สน-บางซื่อ-6-2567-จุดตรวจ.pdf",
+      "source_url": "http://www.policebangsue.org/ita/011-คำสั่ง-การตั้งจุดตรวจ...กพ.2567.pdf",
+      "size_bytes": 7693130,
+      "issuing_unit": "สน.บางซื่อ",
+      "doc_number": "6/2567",
+      "doc_year_be": 2567,
+      "use_cases": ["AI Command Drafter (traffic checkpoint)", "OCR (scanned, large)"]
+    },
+    {
+      "category": "คำสั่งสถานี",
+      "title": "คำสั่ง สน.บางซื่อ ที่ 537/2555 — กำหนดอำนาจหน้าที่",
+      "filename": "1-คำสั่ง-ตร/คำสั่ง-สน-บางซื่อ-537-2555.pdf",
+      "source_url": "http://www.policebangsue.org/ita/02_005.pdf",
+      "size_bytes": 1367990,
+      "issuing_unit": "สน.บางซื่อ",
+      "doc_number": "537/2555",
+      "doc_year_be": 2555,
+      "use_cases": ["AI Command Drafter format (station authority)"]
+    },
+    {
+      "category": "คำสั่งสถานี",
+      "title": "อำนาจหน้าที่และภารกิจของสถานี — สภ.ปลายพระยา",
+      "filename": "1-คำสั่ง-ตร/อำนาจหน้าที่-ภารกิจสถานี-ปลายพระยา.pdf",
+      "source_url": "https://plaiphraya.krabi.police.go.th/wp-content/uploads/2024/04/O2-อำนาจหน้าที่ภารกิจสถานี.pdf",
+      "size_bytes": 90176,
+      "issuing_unit": "สภ.ปลายพระยา",
+      "use_cases": ["AI Command Drafter format (station mission)"]
+    },
+    {
+      "category": "บันทึกข้อความ",
+      "title": "บันทึกข้อความ (รวมเดือนตุลาคม)",
+      "filename": "2-หนังสือเวียน/บันทึกข้อความ-ตุลาคม.pdf",
+      "source_url": "https://phetchakasempolicestation.com/wp-content/uploads/2024/05/ตุลาคม.pdf",
+      "size_bytes": 383579,
+      "use_cases": ["AI Command Drafter format (internal memo)"]
+    },
+    {
+      "category": "แผน-นโยบาย",
+      "title": "แผนปฏิบัติราชการ ตร. ราย 5 ปี (พ.ศ. 2566–2570)",
+      "filename": "3-แผน-นโยบาย/แผนปฏิบัติราชการ-ตร-2566-2570.pdf",
+      "source_url": "https://www.royalthaipolice.go.th/downloads/plan66.pdf",
+      "size_bytes": 7748312,
+      "use_cases": ["Strategic Alignment training", "Doc Classification: ยศ."]
+    },
+    {
+      "category": "แผน-นโยบาย",
+      "title": "แผนปฏิบัติราชการ ตร. ประจำปี 2569",
+      "filename": "3-แผน-นโยบาย/แผนปฏิบัติราชการ-ตร-2569.pdf",
+      "source_url": "https://www.royalthaipolice.go.th/downloads/plan2569.pdf",
+      "size_bytes": 9429542,
+      "use_cases": ["Strategic Alignment training", "Doc Classification: ยศ."]
+    },
+    {
+      "category": "ประกาศ",
+      "title": "ประกาศลำดับอาวุโสข้าราชการตำรวจ วาระเมษายน 2568",
+      "filename": "4-ประกาศ/ประกาศลำดับอาวุโส-469-2568.pdf",
+      "source_url": "https://human.police.go.th/wp-content/uploads/2025/02/469-ประกาศลำดับอาวุโส....pdf",
+      "size_bytes": 1533484,
+      "use_cases": ["Doc Classification: ผบ."]
+    },
+    {
+      "category": "ประกาศ",
+      "title": "เอกสารแนบท้ายประกาศสำนักงานตำรวจแห่งชาติ (660213)",
+      "filename": "4-ประกาศ/เอกสารแนบประกาศ-ตร-660213.pdf",
+      "source_url": "https://www.royalthaipolice.go.th/downloads/660213.pdf",
+      "size_bytes": 334920,
+      "use_cases": ["Doc Classification: ผบ."]
+    },
+    {
+      "category": "ระเบียบ-กฎหมาย",
+      "title": "กฎ ก.ตร. ว่าด้วยการแต่งตั้งข้าราชการตำรวจ 2567",
+      "filename": "5-ระเบียบ-กฎหมาย/กฎ-กตร-แต่งตั้ง-2567.pdf",
+      "source_url": "http://maerim.chiangmaipolice.go.th/ITA/O21/24-กฎ-กตร-ว่าด้วยการแต่งตั้ง-2567.pdf",
+      "size_bytes": 4796930,
+      "use_cases": ["Strategic Alignment", "Doc Classification: อจ."]
+    },
+    {
+      "category": "ระเบียบ-กฎหมาย",
+      "title": "คำสั่ง — มาตรการควบคุมความประพฤติและวินัย (สภ.ศรีสาคร)",
+      "filename": "5-ระเบียบ-กฎหมาย/คำสั่ง-มาตรการวินัย-สภศรีสาคร.pdf",
+      "source_url": "https://srisakhon.narathiwat.police.go.th/wp-content/uploads/2024/04/O21-...วินัย.pdf",
+      "size_bytes": 3847473,
+      "use_cases": ["AI Command Drafter (discipline)", "Doc Classification: อจ."]
+    }
+  ]
+}

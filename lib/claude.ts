@@ -31,14 +31,12 @@ export function getClaude(): Anthropic {
 // Models
 // ─────────────────────────────────────────────
 
-// AI Model — Anthropic Claude Opus 4.5 (ตามคำสั่ง user)
-// ราคา ~$15/$75 per MTok (input/output) — สูงกว่า Haiku ~15x
+// AI Models — ใช้ Opus 4.7 (รุ่นล่าสุด ฉลาดที่สุด) สำหรับงาน parse แผน
+// Haiku 4.5 ไว้สำหรับงานเบา ๆ ที่ต้องการเร็วและประหยัด
 export const MODELS = {
-  OPUS: "claude-opus-4-5",
-  /** @deprecated ใช้ MODELS.OPUS แทน — alias เพื่อ backward-compat */
-  HAIKU: "claude-opus-4-5",
-  /** @deprecated ใช้ MODELS.OPUS แทน — alias เพื่อ backward-compat */
-  SONNET: "claude-opus-4-5",
+  OPUS: "claude-opus-4-7",
+  SONNET: "claude-sonnet-4-6",
+  HAIKU: "claude-haiku-4-5-20251001",
 } as const;
 
 export const DEFAULT_MAX_TOKENS = 2048;

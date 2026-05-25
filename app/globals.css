@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   /* Official Thai Police palette */
   --background: #f5f6f8;
@@ -24,6 +26,26 @@
   --muted: #64748b;
 }
 
+.dark {
+  --background: #020617;       /* slate-950 */
+  --foreground: #e2e8f0;       /* slate-200 */
+
+  --primary: #3b5d8a;          /* lighter navy for dark bg */
+  --primary-dark: #1e3a5f;
+  --primary-light: #5278a8;
+
+  --accent: #d4a017;
+  --accent-light: #f5c542;
+
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --info: #60a5fa;
+
+  --border: #1e293b;           /* slate-800 */
+  --muted: #94a3b8;            /* slate-400 */
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -43,7 +65,72 @@
 body {
   font-family: var(--font-thai), system-ui, -apple-system, sans-serif;
   background: var(--background);
+  color: var(--foreground);
 }
+
+/* ────────────────────────────────────────────────
+   Sweeping dark-mode adapter: re-maps the most common
+   Tailwind utility classes so the existing UI inherits
+   a dark palette without editing every component.
+   For surfaces that look wrong, add explicit dark: classes.
+   ──────────────────────────────────────────────── */
+
+.dark .bg-white                { background-color: rgb(15 23 42); }    /* → slate-900 */
+.dark .bg-slate-50             { background-color: rgb(2 6 23); }      /* → slate-950 */
+.dark .bg-slate-100            { background-color: rgb(30 41 59); }    /* → slate-800 */
+.dark .bg-slate-200            { background-color: rgb(51 65 85); }    /* → slate-700 */
+
+.dark .text-slate-900          { color: rgb(241 245 249); }            /* → slate-100 */
+.dark .text-slate-800          { color: rgb(226 232 240); }            /* → slate-200 */
+.dark .text-slate-700          { color: rgb(203 213 225); }            /* → slate-300 */
+.dark .text-slate-600          { color: rgb(148 163 184); }            /* → slate-400 */
+.dark .text-slate-500          { color: rgb(148 163 184); }            /* → slate-400 */
+.dark .text-slate-400          { color: rgb(100 116 139); }            /* → slate-500 */
+.dark .text-slate-300          { color: rgb(71 85 105); }              /* → slate-600 */
+
+.dark .border-slate-100        { border-color: rgb(30 41 59); }
+.dark .border-slate-200        { border-color: rgb(30 41 59); }
+.dark .border-slate-300        { border-color: rgb(51 65 85); }
+
+.dark .divide-slate-100 > * + *  { border-color: rgb(30 41 59); }
+.dark .divide-slate-200 > * + *  { border-color: rgb(30 41 59); }
+
+/* Hover states */
+.dark .hover\:bg-slate-50:hover        { background-color: rgb(30 41 59); }
+.dark .hover\:bg-slate-100:hover       { background-color: rgb(51 65 85); }
+.dark .hover\:bg-slate-50\/80:hover    { background-color: rgb(30 41 59 / 0.8); }
+.dark .hover\:border-slate-300:hover   { border-color: rgb(71 85 105); }
+.dark .hover\:border-slate-400:hover   { border-color: rgb(100 116 139); }
+
+/* Status tints — soften for dark mode */
+.dark .bg-emerald-50           { background-color: rgb(6 78 59 / 0.3); }   /* emerald-900/30 */
+.dark .bg-emerald-100          { background-color: rgb(6 78 59 / 0.5); }
+.dark .bg-amber-50             { background-color: rgb(120 53 15 / 0.25); }
+.dark .bg-amber-100            { background-color: rgb(120 53 15 / 0.4); }
+.dark .bg-blue-50              { background-color: rgb(30 58 138 / 0.3); }
+.dark .bg-blue-100             { background-color: rgb(30 58 138 / 0.5); }
+.dark .bg-red-50               { background-color: rgb(127 29 29 / 0.3); }
+.dark .bg-red-100              { background-color: rgb(127 29 29 / 0.5); }
+
+.dark .text-emerald-900        { color: rgb(167 243 208); }
+.dark .text-emerald-800        { color: rgb(110 231 183); }
+.dark .text-emerald-700        { color: rgb(52 211 153); }
+.dark .text-amber-900          { color: rgb(254 215 170); }
+.dark .text-amber-800          { color: rgb(253 186 116); }
+.dark .text-amber-700          { color: rgb(251 146 60); }
+.dark .text-blue-900           { color: rgb(191 219 254); }
+.dark .text-blue-800           { color: rgb(147 197 253); }
+.dark .text-red-900            { color: rgb(254 202 202); }
+.dark .text-red-800            { color: rgb(252 165 165); }
+
+.dark .border-emerald-200      { border-color: rgb(6 95 70); }
+.dark .border-emerald-300      { border-color: rgb(5 150 105); }
+.dark .border-amber-200        { border-color: rgb(146 64 14); }
+.dark .border-amber-300        { border-color: rgb(180 83 9); }
+.dark .border-blue-200         { border-color: rgb(30 64 175); }
+.dark .border-blue-300         { border-color: rgb(37 99 235); }
+.dark .border-red-200          { border-color: rgb(153 27 27); }
+.dark .border-red-300          { border-color: rgb(185 28 28); }
 
 /* Scrollbar — restrained */
 ::-webkit-scrollbar {
@@ -59,6 +146,12 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
 }
 
 /* Numbers in tabular contexts */

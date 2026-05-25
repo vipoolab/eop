@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
 export default function Home() {
-  redirect("/dashboard");
+  // Demo entrypoint: เริ่มที่ "งานรอ" — ทุก persona เห็นงานที่ต้องทำ
+  redirect("/inbox");
 }

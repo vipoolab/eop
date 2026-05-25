@@ -1,30 +1,19 @@
-// /api/commands/[id] — GET single command
-
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { findCommandById } from "@/features/commands/repository";
+import { getCommand, deleteCommand } from "@/lib/commands/store";
 
-export async function GET(
-  _req: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json(
-      { success: false, message: "ต้องเข้าสู่ระบบก่อน" },
-      { status: 401 }
-    );
+export const dynamic = "force-dynamic";
+
+export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const { id } = await ctx.params;
+  const cmd = getCommand(id);
+  if (!cmd) {
+    return NextResponse.json({ success: false, message: "ไม่พบคำสั่ง" }, { status: 404 });
   }
+  return NextResponse.json({ success: true, data: { command: cmd } });
+}
 
-  const { id } = await context.params;
-  const command = await findCommandById(id);
-
-  if (!command) {
-    return NextResponse.json(
-      { success: false, message: "ไม่พบคำสั่งนี้" },
-      { status: 404 }
-    );
-  }
-
-  return NextResponse.json({ success: true, data: command });
+export async function DELETE(_req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const { id } = await ctx.params;
+  const ok = deleteCommand(id);
+  return NextResponse.json({ success: ok });
 }

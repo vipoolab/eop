@@ -1,0 +1,334 @@
+// Types for ระบบร่างหนังสือสั่งการ (Command Drafting Workflow)
+//
+// Full lifecycle (8 stages):
+//   DRAFT       — junior staff drafts a proposal
+//   SUBMITTED   — proposal sent to supervisor for approval
+//   APPROVED    — supervisor approved with digital signature
+//   DISPATCHED  — command broadcast to target units
+//   ↓ per-unit lifecycle (parallel):
+//     PENDING → ACKNOWLEDGED → IN_PROGRESS → REPORTED
+//   IN_PROGRESS — at least one unit is acting (rollup)
+//   REPORTED    — all units have submitted reports (rollup)
+//   CLOSED      — owner closed the command
+
+export type CommandStatus =
+  | "DRAFT"
+  | "SUBMITTED"
+  | "APPROVED"
+  | "DISPATCHED"
+  | "IN_PROGRESS"
+  | "REPORTED"
+  | "CLOSED"
+  | "REJECTED";
+
+export type UnitStatus =
+  | "PENDING" // ยังไม่รับทราบ
+  | "ACKNOWLEDGED" // รับทราบแล้ว
+  | "IN_PROGRESS" // เริ่มปฏิบัติ
+  | "REPORTED" // ส่งผลแล้ว
+  | "CLOSED"; // ปิดงาน (รวมระดับ command)
+
+export type WizardStep =
+  | "INTENT"
+  | "DRAFT"
+  | "TARGETS"
+  | "SCHEDULE"
+  | "KPI"
+  | "REVIEW";
+
+// ── Letter ────────────────────────────────────
+export interface CommandLetter {
+  docNumber?: string;
+  subject: string;           // PoC 1 — หัวเรื่อง
+  recipient: string;         // PoC 2 — หน่วยงาน/ผู้รับ (editable)
+  objective?: string;        // PoC 3 — วัตถุประสงค์/เหตุผล
+  references?: string[];
+  attachments?: string[];
+  introduction: string;
+  directives: string[];      // PoC 4 — ข้อสั่งการหลัก
+  reportInstruction?: string; // PoC 5 — ระยะเวลา/เงื่อนไขรายงาน (editable)
+  closing: string;
+  signerName?: string;
+  signerTitle?: string;
+  signerDate?: string;
+  // Digital signature applied at approval time
+  signatureApplied?: boolean;
+  signatureText?: string; // The "signed name" applied
+  signatureAppliedAt?: string;
+}
+
+// ── Plan alignment ────────────────────────────
+export interface CommandAlignment {
+  nationalStrategyItemIds: string[];
+  masterPlanItemIds: string[];
+  actionPlanItemIds: string[];
+  explanation: string;
+}
+
+// ── KPI ───────────────────────────────────────
+export type KpiType = "QUANTITATIVE" | "QUALITATIVE";
+
+export interface KpiDefinition {
+  id: string;
+  type: KpiType;
+  metric: string;
+  unit?: string;
+  targetTotal?: number;
+  reportFrequency: "DAILY" | "WEEKLY" | "MONTHLY" | "END_OF_PERIOD";
+  description?: string;
+  reportFormId?: string; // linked ReportForm id — used for QUALITATIVE KPIs
+}
+
+export interface KpiAssignment {
+  kpiId: string;
+  unitId: string;
+  targetShare?: number;
+  status: "PENDING" | "REPORTING" | "COMPLETED" | "OVERDUE";
+  currentValue?: number;
+  lastReportedAt?: string;
+}
+
+// ── Per-unit progress tracking ────────────────
+export interface UnitProgressReport {
+  id: string;
+  reportedAt: string;
+  reportedBy: string; // persona id
+  reportedByName: string;
+  reportedByTitle: string;
+  notes?: string;
+  kpiValues: { kpiId: string; value: number; note?: string }[];
+}
+
+export interface UnitProgress {
+  unitId: string;
+  status: UnitStatus;
+  acknowledgedAt?: string;
+  acknowledgedBy?: string; // persona id
+  acknowledgedByName?: string;
+  startedAt?: string;
+  startedBy?: string;
+  startedByName?: string;
+  closedAt?: string;
+  reports: UnitProgressReport[];
+}
+
+// ── Status log entry (audit trail) ────────────
+export interface StatusLogEntry {
+  timestamp: string;
+  fromStatus: CommandStatus;
+  toStatus: CommandStatus;
+  byPersonaId: string;
+  byName: string;
+  byTitle: string;
+  note?: string;
+}
+
+// ── Targets ───────────────────────────────────
+export type CascadeMode = "DIRECT" | "CASCADE";
+
+// ── Priority + Emergency ──────────────────────
+export type CommandPriority = "NORMAL" | "URGENT" | "EMERGENCY";
+
+export type EmergencyTriggerType =
+  | "เหตุก่อการร้าย"
+  | "ภัยพิบัติ"
+  | "การชุมนุมรุนแรง"
+  | "เหตุคนร้ายติดอาวุธ"
+  | "อาชญากรรมต่อเนื่อง"
+  | "อื่นๆ";
+
+export interface EmergencyMeta {
+  triggeredAt: string;
+  triggerType: EmergencyTriggerType;
+  location?: string;
+  description: string;
+  /** True if this command was auto-dispatched (bypassed approval flow) */
+  autoDispatched: boolean;
+}
+
+// ── Notification + Escalation ─────────────────
+export type NotificationChannel = "EMAIL" | "LINE" | "SMS" | "PUSH" | "RADIO";
+
+export interface NotificationLog {
+  id: string;
+  channel: NotificationChannel;
+  recipient: string; // unit name or persona name (display)
+  recipientId: string; // unit id or persona id
+  sentAt: string;
+  status: "SENT" | "DELIVERED" | "READ" | "FAILED";
+  readAt?: string;
+  message: string;
+}
+
+export type EscalationReason = "NO_ACK_TIMEOUT" | "OVERDUE_REPORT" | "MANUAL";
+
+export interface EscalationLog {
+  id: string;
+  reason: EscalationReason;
+  triggeredAt: string;
+  fromUnitId: string;
+  toUnitId: string; // escalated to (higher level)
+  toUnitName: string;
+  note: string;
+}
+
+// ── Command (entity) ──────────────────────────
+export interface Command {
+  id: string;
+  status: CommandStatus;
+
+  // Step 1
+  userIntent: string;
+
+  // Step 2 (AI)
+  letter: CommandLetter;
+  alignment: CommandAlignment;
+  draftedBy: string; // AI model
+  draftedAt: string;
+  draftDurationMs?: number;
+  draftTokens?: number;
+
+  // Step 3
+  targetUnitIds: string[];
+  cascadeMode: CascadeMode;
+  effectiveUnitIds: string[];
+
+  // Step 4
+  effectiveDate: string;
+  dueDate: string;
+
+  // Step 5
+  kpis: KpiDefinition[];
+  assignments: KpiAssignment[];
+
+  // ── Workflow ──
+  // Creator (persona who drafted)
+  createdBy: string;
+  createdByName: string;
+  createdByTitle: string;
+  createdAt: string;
+
+  // Approval flow
+  proposedApproverId?: string; // persona id of intended approver
+  submittedAt?: string;
+  submittedBy?: string;
+  submittedByName?: string;
+
+  approvedAt?: string;
+  approvedBy?: string;
+  approvedByName?: string;
+  approvedByTitle?: string;
+  rejectedAt?: string;
+  rejectedBy?: string;
+  rejectionReason?: string;
+
+  dispatchedAt?: string;
+  closedAt?: string;
+  closedBy?: string;
+  closedByName?: string;
+
+  // Per-unit progress (one entry per effective unit)
+  unitProgress: UnitProgress[];
+
+  // Audit trail
+  statusLog: StatusLogEntry[];
+
+  // ── Priority + Emergency ──
+  /** Defaults to NORMAL when absent for backward compatibility */
+  priority?: CommandPriority;
+  /** Set when priority is EMERGENCY */
+  emergency?: EmergencyMeta;
+  /** Notification fan-out log (channel/recipient/status). */
+  notifications: NotificationLog[];
+  /** Escalation events (e.g. no-ack timeout → bumped up the chain). */
+  escalations: EscalationLog[];
+}
+
+// ── AI Drafter I/O ────────────────────────────
+// PoC-style 3-input draft format
+export interface DraftInputFields {
+  keywords: string;      // คำสำคัญ (e.g. "คอลเซ็นเตอร์, จับกุม, ภาคเหนือ")
+  baseInfo: string;      // ข้อมูลตั้งต้น (data points, who/what/where)
+  context: string;       // บริบทที่เกี่ยวข้อง (background, situation)
+}
+
+export interface DrafterInput {
+  // PoC-style 3-input fields (preferred)
+  fields?: DraftInputFields;
+  // Legacy free-text intent (fallback for compat)
+  intent: string;
+
+  signerName: string;
+  signerTitle: string;
+  signerUnit: string;
+  candidatePlans: {
+    nationalStrategy: { id: string; number: string; name: string; description?: string }[];
+    masterPlans: { id: string; number: string; name: string; description?: string }[];
+    actionPlans: { id: string; number: string; name: string; description?: string }[];
+  };
+  // List of units this persona may target (so AI can suggest matching ones)
+  candidateUnits?: { id: string; code: string; name: string; shortName?: string; level: number }[];
+}
+
+export interface DrafterOutput {
+  letter: CommandLetter;
+  alignment: CommandAlignment;
+  suggestedKpis: KpiDefinition[];
+  // AI-suggested targets + duration — wizard pre-fills these for user review
+  suggestedTargetUnitIds?: string[];
+  suggestedCascadeMode?: CascadeMode;
+  suggestedDurationDays?: number;
+}
+
+// ── Stage labels for UI ───────────────────────
+export const STATUS_LABELS: Record<CommandStatus, string> = {
+  DRAFT: "ร่าง",
+  SUBMITTED: "เสนอเพื่ออนุมัติ",
+  APPROVED: "อนุมัติแล้ว",
+  DISPATCHED: "เผยแพร่",
+  IN_PROGRESS: "กำลังปฏิบัติ",
+  REPORTED: "ส่งผลครบ",
+  CLOSED: "ปิดงาน",
+  REJECTED: "ตีกลับ",
+};
+
+export const STATUS_FLOW: CommandStatus[] = [
+  "DRAFT",
+  "SUBMITTED",
+  "APPROVED",
+  "DISPATCHED",
+  "IN_PROGRESS",
+  "REPORTED",
+  "CLOSED",
+];
+
+export const UNIT_STATUS_LABELS: Record<UnitStatus, string> = {
+  PENDING: "รอรับทราบ",
+  ACKNOWLEDGED: "รับทราบแล้ว",
+  IN_PROGRESS: "กำลังปฏิบัติ",
+  REPORTED: "ส่งผลแล้ว",
+  CLOSED: "ปิด",
+};
+
+export const UNIT_STATUS_FLOW: UnitStatus[] = [
+  "PENDING",
+  "ACKNOWLEDGED",
+  "IN_PROGRESS",
+  "REPORTED",
+  "CLOSED",
+];
+
+export const PRIORITY_LABELS: Record<CommandPriority, string> = {
+  NORMAL: "ปกติ",
+  URGENT: "ด่วน",
+  EMERGENCY: "ด่วนที่สุด / ฉุกเฉิน",
+};
+
+export const EMERGENCY_TRIGGER_TYPES: EmergencyTriggerType[] = [
+  "เหตุก่อการร้าย",
+  "ภัยพิบัติ",
+  "การชุมนุมรุนแรง",
+  "เหตุคนร้ายติดอาวุธ",
+  "อาชญากรรมต่อเนื่อง",
+  "อื่นๆ",
+];
