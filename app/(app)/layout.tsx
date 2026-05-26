@@ -1,6 +1,5 @@
 import { Sidebar } from "@/components/sidebar";
 import { Header } from "@/components/header";
-import { TaskNotifier } from "@/components/task-notifier";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -12,7 +11,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           {children}
         </main>
       </div>
-      <TaskNotifier />
     </div>
   );
 }
