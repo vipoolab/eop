@@ -11,7 +11,7 @@ import {
   Check,
   FileText,
   Tag,
-  Send,
+  Scale,
   Target,
   ListChecks,
   Clock,
@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import type { DrafterOutput } from "@/lib/commands/types";
 import { safeJson } from "@/lib/utils";
+import { Garuda } from "@/components/garuda";
 
 export interface IntentFields {
   keywords: string;
@@ -220,18 +221,18 @@ export function DraftStep({ fields, intent, draft, onDraftReceived, onChange }: 
         </button>
       </div>
 
-      {/* ── 5-Section PoC Output Cards ── */}
+      {/* ── 5-Section คำสั่ง Output Cards ── */}
       <section className="rounded-sm border-2 border-[#b8860b]/40 bg-gradient-to-br from-amber-50/40 to-white dark:from-amber-900/10 dark:to-slate-900 p-4">
         <div className="flex items-center gap-2 mb-3">
           <Sparkles className="h-4 w-4 text-[#b8860b]" />
           <h3 className="text-sm font-bold text-[#b8860b] uppercase tracking-wider">
-            ๕ องค์ประกอบ (ตามเกณฑ์ PoC)
+            ๕ องค์ประกอบของคำสั่ง (ตามระเบียบสารบรรณ ข้อ ๒๒)
           </h3>
         </div>
 
         <div className="space-y-3">
           {/* 1. Subject */}
-          <PocCard num="๑" icon={Tag} accent="navy" label="หัวเรื่อง" editable={false}>
+          <PocCard num="๑" icon={Tag} accent="navy" label="ชื่อเรื่องของคำสั่ง (เรื่อง)" editable={false}>
             <input
               type="text"
               value={draft.letter.subject}
@@ -240,28 +241,29 @@ export function DraftStep({ fields, intent, draft, onDraftReceived, onChange }: 
             />
           </PocCard>
 
-          {/* 2. Recipient — EDITABLE flag */}
-          <PocCard num="๒" icon={Send} accent="gold" label="หน่วยงาน/ผู้รับคำสั่ง" editable={true}>
-            <input
-              type="text"
-              value={draft.letter.recipient}
-              onChange={(e) => setLetter({ recipient: e.target.value })}
-              className="w-full bg-transparent border-b-2 border-[#b8860b]/40 hover:border-[#b8860b]/60 focus:border-[#b8860b] focus:outline-none text-sm font-semibold text-slate-900 dark:text-slate-100 py-1"
-            />
-          </PocCard>
-
-          {/* 3. Objective */}
-          <PocCard num="๓" icon={Target} accent="blue" label="วัตถุประสงค์/เหตุผลของการสั่งการ" editable={false}>
+          {/* 2. Objective — EDITABLE: ที่มา/เหตุผล */}
+          <PocCard num="๒" icon={Target} accent="blue" label="ความนำ — ที่มา / เหตุผล / บริบท" editable={true}>
             <textarea
               value={draft.letter.objective ?? ""}
               onChange={(e) => setLetter({ objective: e.target.value })}
+              rows={3}
+              className="w-full bg-transparent border-b-2 border-[#b8860b]/40 hover:border-[#b8860b]/60 focus:border-[#b8860b] focus:outline-none text-sm text-slate-900 dark:text-slate-100 py-1 resize-y leading-relaxed"
+            />
+          </PocCard>
+
+          {/* 3. Legal basis — EDITABLE: อาศัยอำนาจตาม... */}
+          <PocCard num="๓" icon={Scale} accent="gold" label="อำนาจที่อ้าง — อาศัยอำนาจตาม...จึงสั่งให้..." editable={true}>
+            <textarea
+              value={draft.letter.legalBasis ?? ""}
+              onChange={(e) => setLetter({ legalBasis: e.target.value })}
               rows={2}
-              className="w-full bg-transparent border-b border-dashed border-slate-300 hover:border-slate-400 focus:border-[#1e3a5f] focus:outline-none text-sm text-slate-900 dark:text-slate-100 py-1 resize-none leading-relaxed"
+              placeholder="อาศัยอำนาจตามความในมาตรา ๑๑ แห่งพระราชบัญญัติตำรวจแห่งชาติ พ.ศ. ๒๕๖๕ ผู้บัญชาการตำรวจแห่งชาติ จึงสั่งให้ดำเนินการดังต่อไปนี้"
+              className="w-full bg-transparent border-b-2 border-[#b8860b]/40 hover:border-[#b8860b]/60 focus:border-[#b8860b] focus:outline-none text-sm text-slate-900 dark:text-slate-100 py-1 resize-y leading-relaxed"
             />
           </PocCard>
 
           {/* 4. Directives */}
-          <PocCard num="๔" icon={ListChecks} accent="emerald" label="ข้อสั่งการหลัก/แนวทางปฏิบัติ" editable={false}>
+          <PocCard num="๔" icon={ListChecks} accent="emerald" label="ข้อสั่งการ (เลขไทย ๑./๒./๓.)" editable={false}>
             <div className="space-y-1.5">
               {draft.letter.directives.map((d, idx) => (
                 <textarea
@@ -279,13 +281,14 @@ export function DraftStep({ fields, intent, draft, onDraftReceived, onChange }: 
             </div>
           </PocCard>
 
-          {/* 5. Report Instruction — EDITABLE flag */}
-          <PocCard num="๕" icon={Clock} accent="amber" label="ระยะเวลา/เงื่อนไขการรายงานผล" editable={true}>
+          {/* 5. Effective Clause — EDITABLE */}
+          <PocCard num="๕" icon={Clock} accent="amber" label="คำลงท้าย — ระยะเวลามีผล (ทั้งนี้ ตั้งแต่...)" editable={true}>
             <textarea
-              value={draft.letter.reportInstruction ?? ""}
-              onChange={(e) => setLetter({ reportInstruction: e.target.value })}
+              value={draft.letter.effectiveClause ?? ""}
+              onChange={(e) => setLetter({ effectiveClause: e.target.value })}
               rows={2}
-              className="w-full bg-transparent border-b-2 border-[#b8860b]/40 hover:border-[#b8860b]/60 focus:border-[#b8860b] focus:outline-none text-sm text-slate-900 dark:text-slate-100 py-1 resize-none leading-relaxed"
+              placeholder="ทั้งนี้ ตั้งแต่บัดนี้เป็นต้นไป จนถึงวันที่ ... พ.ศ. ๒๕๖๙"
+              className="w-full bg-transparent border-b-2 border-[#b8860b]/40 hover:border-[#b8860b]/60 focus:border-[#b8860b] focus:outline-none text-sm text-slate-900 dark:text-slate-100 py-1 resize-y leading-relaxed"
             />
           </PocCard>
         </div>
@@ -368,11 +371,11 @@ function PocCard({ num, icon: Icon, accent, label, editable, children }: PocCard
   );
 }
 
-// ── Formal Letter Preview (real Thai government format) ──
+// ── Formal Letter Preview — "คำสั่ง" format per ระเบียบสารบรรณ ข้อ ๒๒ ──
 
 function FormalLetterPreview({ draft }: { draft: DrafterOutput }) {
   const today = thaiDate(new Date());
-  const docNumber = draft.letter.docNumber ?? "ที่ ตร. ........./๒๕๖๙";
+  const docNumber = draft.letter.docNumber ?? "...../๒๕๖๙";
 
   return (
     <section className="border border-slate-300 dark:border-slate-700 rounded-sm bg-white dark:bg-slate-950 overflow-hidden shadow-sm">
@@ -380,84 +383,79 @@ function FormalLetterPreview({ draft }: { draft: DrafterOutput }) {
         <div className="flex items-center gap-2">
           <FileText className="h-4 w-4 text-[#1e3a5f] dark:text-amber-400" />
           <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-            ตัวอย่างหนังสือสั่งการ (Preview)
+            ตัวอย่างคำสั่ง (Preview)
           </span>
         </div>
         <span className="text-[10px] text-slate-500 dark:text-slate-400">
-          ตามระเบียบสำนักนายกรัฐมนตรีว่าด้วยงานสารบรรณ พ.ศ. ๒๕๒๖
+          ตามระเบียบสารบรรณ ข้อ ๒๒ — ฟอนต์ Sarabun (เทียบเท่า TH SarabunPSK)
         </span>
       </div>
 
-      <div className="p-8 md:p-10 bg-white dark:bg-slate-950 font-[var(--font-thai)] text-slate-900 dark:text-slate-100 leading-loose">
-        {/* Header — ตราครุฑ */}
-        <div className="flex flex-col items-center mb-6">
-          <div className="h-12 w-12 rounded-full border-2 border-slate-700 dark:border-slate-300 flex items-center justify-center text-2xl">
-            <span aria-hidden>🛡️</span>
-          </div>
-          <div className="text-[10px] text-slate-500 mt-1">[ตราครุฑ]</div>
+      {/* Paper — standard government margins ≈ 3/2/3/2 cm */}
+      <div
+        className="bg-white dark:bg-slate-950 font-[var(--font-sarabun)] text-slate-900 dark:text-slate-100"
+        style={{ padding: "3rem 2.5rem 2.5rem 3rem", lineHeight: 1.45, fontSize: "15px" }}
+      >
+        {/* ── Garuda emblem — centered ── */}
+        <div className="flex flex-col items-center mb-3">
+          <Garuda size={56} className="text-slate-800 dark:text-slate-200" />
         </div>
 
-        {/* Doc # + Date */}
-        <div className="flex justify-between text-sm mb-3">
+        {/* ── Header block: คำสั่ง + ที่ + เรื่อง — center-aligned ── */}
+        <div className="text-center space-y-1 mb-3">
+          <div className="text-base font-semibold">คำสั่งสำนักงานตำรวจแห่งชาติ</div>
+          <div>ที่ {docNumber}</div>
           <div>
-            <div>{docNumber}</div>
-            <div className="text-xs text-slate-500">สำนักงานตำรวจแห่งชาติ</div>
-          </div>
-          <div className="text-right">
-            <div>{today}</div>
-          </div>
-        </div>
-
-        {/* Subject + Recipient */}
-        <div className="space-y-1 mb-4 mt-6">
-          <div>
-            <span className="font-semibold mr-2">เรื่อง</span>
+            <span>เรื่อง  </span>
             <span>{stripLead(draft.letter.subject, "เรื่อง")}</span>
           </div>
-          <div>
-            <span className="font-semibold mr-2">เรียน</span>
-            <span>{stripLead(draft.letter.recipient, "เรียน")}</span>
-          </div>
-          {draft.letter.references && draft.letter.references.length > 0 && (
-            <div>
-              <span className="font-semibold mr-2">อ้างถึง</span>
-              <span>{draft.letter.references.join(" / ")}</span>
-            </div>
-          )}
         </div>
 
-        {/* Introduction + Objective */}
-        <div className="text-justify indent-12 my-4 leading-loose">
-          {draft.letter.introduction || draft.letter.objective}
+        {/* Divider */}
+        <div className="flex justify-center my-3">
+          <div className="border-t border-slate-700 dark:border-slate-300 w-32" />
         </div>
 
-        {/* Directives */}
-        <div className="my-4">
-          <div className="indent-12 mb-2">จึงให้ดำเนินการดังนี้</div>
-          <div className="space-y-2 pl-8">
-            {draft.letter.directives.map((d, idx) => (
-              <div key={idx} className="text-justify">{d}</div>
-            ))}
-          </div>
-        </div>
-
-        {/* Report timeframe */}
-        {draft.letter.reportInstruction && (
-          <div className="text-justify indent-12 my-4 leading-loose">
-            {draft.letter.reportInstruction}
-          </div>
+        {/* ── Objective (ความนำ) ── */}
+        {draft.letter.objective && (
+          <p className="text-justify my-3" style={{ textIndent: "2.5em" }}>
+            {draft.letter.objective}
+          </p>
         )}
 
-        {/* Closing */}
-        <div className="text-justify indent-12 my-4 leading-loose">
-          {draft.letter.closing}
+        {/* ── Legal basis (อาศัยอำนาจตาม...) ── */}
+        {draft.letter.legalBasis && (
+          <p className="text-justify my-3" style={{ textIndent: "2.5em" }}>
+            {draft.letter.legalBasis}
+          </p>
+        )}
+
+        {/* ── Directives — numbered (numbers already in text) ── */}
+        <div className="my-3 space-y-2">
+          {draft.letter.directives.map((d, idx) => (
+            <p key={idx} className="text-justify" style={{ textIndent: "2.5em" }}>
+              {d}
+            </p>
+          ))}
         </div>
 
-        {/* Signature */}
-        <div className="text-right mt-12 space-y-0.5">
-          <div className="border-b border-slate-400 dark:border-slate-600 w-48 ml-auto mb-1" />
-          <div className="text-sm">{draft.letter.signerName ?? "( )"}</div>
-          <div className="text-sm">{draft.letter.signerTitle ?? ""}</div>
+        {/* ── Effective clause ── */}
+        {draft.letter.effectiveClause && (
+          <p className="text-justify my-3" style={{ textIndent: "2.5em" }}>
+            {draft.letter.effectiveClause}
+          </p>
+        )}
+
+        {/* ── Signed-at date — centered ── */}
+        <div className="text-center mt-8 mb-2">
+          <span>สั่ง ณ วันที่ {today}</span>
+        </div>
+
+        {/* ── Signature block — centered ── */}
+        <div className="text-center mt-8 space-y-0.5">
+          <div className="mx-auto border-b border-slate-400 dark:border-slate-600 w-64 mb-1" />
+          <div>({draft.letter.signerName ?? "ชื่อ-นามสกุล"})</div>
+          <div>{draft.letter.signerTitle ?? "ตำแหน่งผู้สั่งการ"}</div>
         </div>
       </div>
     </section>

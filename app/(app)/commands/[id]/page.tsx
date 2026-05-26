@@ -17,6 +17,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
+import { Garuda } from "@/components/garuda";
 import { StatusTimeline } from "@/components/commands/status-timeline";
 import { ActionPanel } from "@/components/commands/action-panel";
 import { UnitProgressTable } from "@/components/commands/unit-progress-table";
@@ -162,61 +163,76 @@ export default async function CommandDetailPage({
             </span>
             <span>ร่างโดย AI Engine</span>
           </div>
-          <div className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 shadow-md p-10 font-[var(--font-thai)]">
-            <div className="text-center pb-3 border-b-2 border-slate-300 dark:border-slate-600">
-              <div className="text-lg font-bold text-slate-900 dark:text-slate-100">
-                สำนักงานตำรวจแห่งชาติ
-              </div>
-              <div className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                ROYAL THAI POLICE
-              </div>
+          <div
+            className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 shadow-md font-[var(--font-sarabun)] text-slate-900 dark:text-slate-100"
+            style={{ padding: "3rem 2.5rem 2.5rem 3rem", lineHeight: 1.45, fontSize: "15px" }}
+          >
+            {/* Garuda */}
+            <div className="flex flex-col items-center mb-3">
+              <Garuda size={56} className="text-slate-800 dark:text-slate-200" />
             </div>
 
-            <div className="flex justify-between mt-4 mb-6 text-sm text-slate-700 dark:text-slate-300">
-              <div>
-                <span className="text-slate-500">ที่ </span>
-                <span className="font-mono">{cmd.letter.docNumber ?? "—"}</span>
-              </div>
-              <div>
-                วันที่ออก: {new Date(cmd.createdAt).toLocaleDateString("th-TH", { year: "numeric", month: "long", day: "numeric" })}
-              </div>
+            {/* Header block — คำสั่ง + ที่ + เรื่อง */}
+            <div className="text-center space-y-1 mb-3">
+              <div className="text-base font-semibold">คำสั่งสำนักงานตำรวจแห่งชาติ</div>
+              <div>ที่ {cmd.letter.docNumber ?? "...../๒๕๖๙"}</div>
+              <div>เรื่อง  {cmd.letter.subject.replace(/^\s*เรื่อง\s*/, "")}</div>
             </div>
 
-            <div className="space-y-1.5 mb-5">
-              <div className="text-sm text-slate-900 dark:text-slate-100 font-semibold">
-                {cmd.letter.subject}
-              </div>
-              <div className="text-sm text-slate-900 dark:text-slate-100">{cmd.letter.recipient}</div>
-              {cmd.letter.references && cmd.letter.references.length > 0 && (
-                <div className="text-sm text-slate-900 dark:text-slate-100">
-                  <span className="text-slate-600">อ้างถึง </span>
-                  {cmd.letter.references.map((r, idx) => (
-                    <span key={idx}>
-                      {idx > 0 && " "}
-                      {r.replace(/^อ้างถึง\s*\d+\.\s*/, "")}
-                    </span>
-                  ))}
-                </div>
-              )}
+            {/* Divider */}
+            <div className="flex justify-center my-3">
+              <div className="border-t border-slate-700 dark:border-slate-300 w-32" />
             </div>
 
-            <div className="space-y-3 text-sm text-slate-900 dark:text-slate-100 leading-loose">
-              <p className="indent-12 text-justify">{cmd.letter.introduction}</p>
-              <div className="space-y-1.5">
-                {cmd.letter.directives.map((d, idx) => (
-                  <p key={idx} className="indent-12 text-justify">{d}</p>
-                ))}
-              </div>
-              {cmd.letter.reportInstruction && (
-                <p className="indent-12 text-justify">{cmd.letter.reportInstruction}</p>
-              )}
-              <p className="indent-12 text-justify">{cmd.letter.closing}</p>
+            {/* Body */}
+            {cmd.letter.objective && (
+              <p className="text-justify my-3" style={{ textIndent: "2.5em" }}>
+                {cmd.letter.objective}
+              </p>
+            )}
+            {cmd.letter.legalBasis && (
+              <p className="text-justify my-3" style={{ textIndent: "2.5em" }}>
+                {cmd.letter.legalBasis}
+              </p>
+            )}
+            {/* Backward-compat: old commands stored body in "introduction" */}
+            {!cmd.letter.objective && !cmd.letter.legalBasis && cmd.letter.introduction && (
+              <p className="text-justify my-3" style={{ textIndent: "2.5em" }}>
+                {cmd.letter.introduction}
+              </p>
+            )}
+            <div className="my-3 space-y-2">
+              {cmd.letter.directives.map((d, idx) => (
+                <p key={idx} className="text-justify" style={{ textIndent: "2.5em" }}>
+                  {d}
+                </p>
+              ))}
             </div>
+            {cmd.letter.effectiveClause && (
+              <p className="text-justify my-3" style={{ textIndent: "2.5em" }}>
+                {cmd.letter.effectiveClause}
+              </p>
+            )}
+            {/* Backward-compat: old commands had a separate closing line */}
+            {!cmd.letter.effectiveClause && cmd.letter.closing && (
+              <p className="text-justify my-3" style={{ textIndent: "2.5em" }}>
+                {cmd.letter.closing}
+              </p>
+            )}
 
-            <div className="mt-12 text-right text-sm text-slate-900 dark:text-slate-100">
+            {/* Signed at + Signature — centered */}
+            <div className="text-center mt-8 mb-2">
+              สั่ง ณ วันที่{" "}
+              {new Date(cmd.letter.signedAtDate ?? cmd.createdAt).toLocaleDateString("th-TH", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </div>
+            <div className="text-center mt-8 space-y-0.5">
               {cmd.letter.signatureApplied ? (
                 <>
-                  <div className="font-[var(--font-thai)] italic text-lg text-[#1e3a5f] dark:text-blue-400">
+                  <div className="italic text-lg text-[#1e3a5f] dark:text-blue-400">
                     ✒ {cmd.letter.signatureText}
                   </div>
                   <div className="mt-1">({cmd.letter.signerName})</div>
@@ -231,8 +247,12 @@ export default async function CommandDetailPage({
                 </>
               ) : (
                 <>
-                  <div>(ลงชื่อ) ........................................................</div>
-                  <div className="mt-1 text-slate-500 italic">รอผู้บังคับบัญชาลงนาม</div>
+                  <div className="mx-auto border-b border-slate-400 dark:border-slate-600 w-64 mb-1" />
+                  <div>({cmd.letter.signerName ?? "ชื่อ-นามสกุลผู้สั่งการ"})</div>
+                  <div>{cmd.letter.signerTitle ?? "ตำแหน่งผู้สั่งการ"}</div>
+                  <div className="mt-2 text-xs text-slate-500 italic">
+                    รอผู้บังคับบัญชาลงนาม
+                  </div>
                 </>
               )}
             </div>

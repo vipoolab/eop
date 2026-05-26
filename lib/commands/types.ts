@@ -37,23 +37,73 @@ export type WizardStep =
   | "REVIEW";
 
 // ── Letter ────────────────────────────────────
+// Format: "คำสั่ง" (one of three subtypes of หนังสือสั่งการ) per
+// ระเบียบสำนักนายกรัฐมนตรีว่าด้วยงานสารบรรณ พ.ศ. ๒๕๒๖ ข้อ ๒๒.
+//
+// Structure:
+//   คำสั่งสำนักงานตำรวจแห่งชาติ
+//        ที่ ๑๒๓/๒๕๖๙
+//   เรื่อง <subject>
+//   ────────────────────
+//   <objective> ── ความนำ: ที่มา/เหตุผล
+//   <legalBasis> ── อาศัยอำนาจตาม...
+//   จึงสั่งให้ดำเนินการดังต่อไปนี้
+//        ๑. <directives[0]>
+//        ๒. <directives[1]>
+//        ...
+//   <effectiveClause> ── ทั้งนี้ ตั้งแต่บัดนี้เป็นต้นไป...
+//                       สั่ง ณ วันที่ ...
+//   (signature)
 export interface CommandLetter {
+  /** เลขที่คำสั่ง — รูปแบบ "๑๒๓/๒๕๖๙" (เลขไทย) */
   docNumber?: string;
-  subject: string;           // PoC 1 — หัวเรื่อง
-  recipient: string;         // PoC 2 — หน่วยงาน/ผู้รับ (editable)
-  objective?: string;        // PoC 3 — วัตถุประสงค์/เหตุผล
+  /** PoC #1 — หัวเรื่อง (ไม่ต้องขึ้นต้น "เรื่อง" — UI ใส่ให้) */
+  subject: string;
+  /**
+   * PoC #2 — หน่วยรับคำสั่ง (สำหรับการกระจาย+ติดตาม)
+   * ใน format "คำสั่ง" ไม่ปรากฏเป็น "เรียน" ในเอกสาร — แต่เก็บไว้
+   * เพื่อกำหนดเป้าหมายของคำสั่ง และใช้แสดงข้างนอกเอกสาร (sidebar)
+   */
+  recipient: string;
+  /** PoC #3 — ที่มา/เหตุผล/วัตถุประสงค์ (ความนำ ๑-๒ ย่อหน้า) */
+  objective?: string;
+  /** อ้างถึง (ระเบียบ/หนังสือก่อนหน้า) */
   references?: string[];
+  /** สิ่งที่ส่งมาด้วย */
   attachments?: string[];
-  introduction: string;
-  directives: string[];      // PoC 4 — ข้อสั่งการหลัก
-  reportInstruction?: string; // PoC 5 — ระยะเวลา/เงื่อนไขรายงาน (editable)
-  closing: string;
+  /**
+   * อาศัยอำนาจตาม... (ส่วนสำคัญของคำสั่ง — ระบุกฎหมาย/ระเบียบที่ให้อำนาจ)
+   * ตัวอย่าง: "อาศัยอำนาจตามความในมาตรา ๑๑ แห่งพระราชบัญญัติตำรวจ
+   *           แห่งชาติ พ.ศ. ๒๕๖๕ ผู้บัญชาการตำรวจแห่งชาติ จึงสั่งให้..."
+   */
+  legalBasis?: string;
+  /**
+   * (Legacy) introduction — เนื้อความเต็มแบบไม่แยกส่วน
+   * ใช้สำหรับ command เก่าก่อน migrate มาเป็น format คำสั่ง
+   */
+  introduction?: string;
+  /** PoC #4 — ข้อสั่งการหลัก (เลขไทย ๑./๒./๓.) */
+  directives: string[];
+  /** PoC #5 — ระยะเวลา/วิธีรายงานผล (รวมในข้อสั่งการหรือแยก) */
+  reportInstruction?: string;
+  /**
+   * คำลงท้าย "ทั้งนี้ ตั้งแต่บัดนี้เป็นต้นไป" หรือระบุช่วงเวลา
+   * ตัวอย่าง: "ทั้งนี้ ตั้งแต่บัดนี้เป็นต้นไป จนถึงวันที่ ๒๕ มิถุนายน พ.ศ. ๒๕๖๙"
+   */
+  effectiveClause?: string;
+  /**
+   * (Legacy) closing — "จึงเรียนมาเพื่อทราบและถือปฏิบัติ..."
+   * ใช้กับ format หนังสือภายนอกเดิม — คำสั่งใหม่ใช้ effectiveClause แทน
+   */
+  closing?: string;
+  /** วันที่ลงนาม "สั่ง ณ วันที่ ..." (ISO string) */
+  signedAtDate?: string;
   signerName?: string;
   signerTitle?: string;
   signerDate?: string;
   // Digital signature applied at approval time
   signatureApplied?: boolean;
-  signatureText?: string; // The "signed name" applied
+  signatureText?: string;
   signatureAppliedAt?: string;
 }
 

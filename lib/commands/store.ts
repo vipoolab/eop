@@ -79,12 +79,30 @@ export function genReportId(): string {
   return `rep-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 }
 
-export function genDocNumber(unitCode: string): string {
+// Thai-numeral conversion for document numbers (e.g. 1234 → "๑๒๓๔")
+const THAI_DIGITS = ["๐", "๑", "๒", "๓", "๔", "๕", "๖", "๗", "๘", "๙"];
+function toThaiNumerals(s: string | number): string {
+  return String(s)
+    .split("")
+    .map((c) => (c >= "0" && c <= "9" ? THAI_DIGITS[Number(c)] : c))
+    .join("");
+}
+
+/**
+ * Generate a คำสั่ง document number.
+ * Format per ระเบียบสารบรรณ ข้อ ๒๒.๒: "ที่ <seq>/<buddhist-year>"
+ * Both seq and year in Thai numerals.
+ * Example: "๑๒๓/๒๕๖๙"
+ *
+ * Note: in real RTP practice, seq starts from ๑ each calendar year per
+ * unit's สารบรรณ. Here we use a time-derived value for demo uniqueness.
+ */
+export function genDocNumber(_unitCode?: string): string {
   const now = new Date();
   const buddhistYear = now.getFullYear() + 543;
-  const seq = String(Math.floor(now.getTime() / 1000) % 10000).padStart(4, "0");
-  const prefix = unitCode.replace(/[\.\/\s]/g, "");
-  return `${prefix} ${seq}/${buddhistYear}`;
+  // Seq mod 1000 keeps it 3-digit visually pleasing
+  const seqNum = (Math.floor(now.getTime() / 60_000) % 1000) + 1;
+  return `${toThaiNumerals(seqNum)}/${toThaiNumerals(buddhistYear)}`;
 }
 
 // ── Status transitions ────────────────────────
