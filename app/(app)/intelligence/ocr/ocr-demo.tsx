@@ -19,6 +19,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
+import { MAX_UPLOAD_BYTES, formatBytes, safeJson } from "@/lib/utils";
 
 interface OcrResult {
   filename: string;
@@ -69,8 +70,10 @@ export function OcrDemo() {
       setError("ไฟล์ไม่รองรับ — รับเฉพาะ PDF, PNG, JPG, WEBP");
       return;
     }
-    if (f.size > 20 * 1024 * 1024) {
-      setError("ไฟล์ใหญ่เกิน 20MB");
+    if (f.size > MAX_UPLOAD_BYTES) {
+      setError(
+        `ไฟล์ใหญ่เกิน ${formatBytes(MAX_UPLOAD_BYTES)} ที่ระบบรองรับ — กรุณาใช้ไฟล์ที่เล็กกว่า`
+      );
       return;
     }
     setError(null);
@@ -120,11 +123,12 @@ export function OcrDemo() {
         method: "POST",
         body: fd,
       });
-      const j = await res.json();
+      const j = await safeJson(res);
       clearInterval(stepTimer);
       if (j.success && j.data) {
-        setResult(j.data);
-        setEditedText(j.data.extractedText ?? "");
+        const data = j.data as OcrResult;
+        setResult(data);
+        setEditedText(data.extractedText ?? "");
         setStep(PROCESSING_STEPS.length - 1);
       } else {
         setError(j.message ?? "ส่งงานไม่สำเร็จ");
@@ -190,7 +194,7 @@ export function OcrDemo() {
             ลากไฟล์มาวางที่นี่ หรือคลิกเพื่อเลือก
           </div>
           <div className="text-xs text-slate-500 mb-4">
-            รองรับ <strong>PDF, PNG, JPG, WEBP</strong> · สูงสุด 20MB · ภาษาไทยและภาษาอังกฤษ
+            รองรับ <strong>PDF, PNG, JPG, WEBP</strong> · สูงสุด {formatBytes(MAX_UPLOAD_BYTES)} · ภาษาไทยและภาษาอังกฤษ
           </div>
           <input
             ref={fileInput}

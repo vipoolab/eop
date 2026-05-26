@@ -19,6 +19,7 @@ import {
   Lock,
 } from "lucide-react";
 import type { DrafterOutput } from "@/lib/commands/types";
+import { safeJson } from "@/lib/utils";
 
 export interface IntentFields {
   keywords: string;
@@ -125,13 +126,18 @@ export function DraftStep({ fields, intent, draft, onDraftReceived, onChange }: 
         headers: { "content-type": "application/json" },
         body: JSON.stringify(body),
       });
-      const j = await res.json();
+      const j = await safeJson(res);
       if (!j.success) {
         setError(j.message ?? "ร่างไม่สำเร็จ");
         setLoading(false);
         return;
       }
-      const data = j.data;
+      const data = j.data as {
+        result: DrafterOutput;
+        model: string;
+        durationMs: number;
+        tokens: { input: number; output: number };
+      };
       onDraftReceived(data.result, {
         model: data.model,
         durationMs: data.durationMs,

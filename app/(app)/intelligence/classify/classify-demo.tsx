@@ -20,6 +20,7 @@ import {
   DOC_CATEGORIES,
   type DocCategory,
 } from "@/lib/intelligence/types";
+import { MAX_UPLOAD_BYTES, formatBytes, safeJson } from "@/lib/utils";
 
 interface RecentItem {
   id: string;
@@ -156,11 +157,11 @@ function SingleClassify() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text }),
       });
-      const j = await res.json();
+      const j = await safeJson(res);
       if (j.success) {
-        setResult(j.data);
+        setResult(j.data as SingleClassifyResult);
       } else {
-        setError(j.message);
+        setError(j.message ?? "วิเคราะห์ไม่สำเร็จ");
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "เกิดข้อผิดพลาด");
@@ -371,7 +372,7 @@ function BatchClassify() {
   const fileInput = useRef<HTMLInputElement>(null);
 
   function addFiles(newFiles: File[]) {
-    const accepted = newFiles.filter((f) => {
+    const okType = newFiles.filter((f) => {
       const n = f.name.toLowerCase();
       return (
         n.endsWith(".docx") ||
@@ -380,12 +381,20 @@ function BatchClassify() {
         n.endsWith(".md")
       );
     });
-    const rejected = newFiles.length - accepted.length;
-    if (rejected > 0) {
-      setError(`ไม่รองรับไฟล์ ${rejected} ไฟล์ — รับเฉพาะ .pdf, .docx, .txt, .md`);
-    } else {
-      setError(null);
+    const oversized = okType.filter((f) => f.size > MAX_UPLOAD_BYTES);
+    const accepted = okType.filter((f) => f.size <= MAX_UPLOAD_BYTES);
+    const wrongType = newFiles.length - okType.length;
+
+    const problems: string[] = [];
+    if (wrongType > 0) {
+      problems.push(`ไม่รองรับ ${wrongType} ไฟล์ (รับเฉพาะ .pdf, .docx, .txt, .md)`);
     }
+    if (oversized.length > 0) {
+      problems.push(
+        `ไฟล์ใหญ่เกิน ${formatBytes(MAX_UPLOAD_BYTES)}: ${oversized.map((f) => f.name).join(", ")}`
+      );
+    }
+    setError(problems.length > 0 ? problems.join(" · ") : null);
     setFiles((prev) => [...prev, ...accepted].slice(0, 30));
   }
 
@@ -396,6 +405,13 @@ function BatchClassify() {
   async function runBatch() {
     if (files.length === 0) {
       setError("กรุณาเลือกไฟล์อย่างน้อย ๑ ไฟล์");
+      return;
+    }
+    const totalSize = files.reduce((sum, f) => sum + f.size, 0);
+    if (totalSize > MAX_UPLOAD_BYTES) {
+      setError(
+        `ขนาดรวมของไฟล์ทั้งหมด ${formatBytes(totalSize)} เกินที่ระบบรองรับ (สูงสุด ${formatBytes(MAX_UPLOAD_BYTES)} ต่อครั้ง) — กรุณาแยกส่งทีละน้อย`
+      );
       return;
     }
     setError(null);
@@ -411,9 +427,9 @@ function BatchClassify() {
         method: "POST",
         body: fd,
       });
-      const j = await res.json();
+      const j = await safeJson(res);
       if (j.success && j.data) {
-        setResult(j.data);
+        setResult(j.data as BatchResult);
         setProgress(100);
       } else {
         setError(j.message ?? "ส่งงานไม่สำเร็จ");
@@ -454,7 +470,8 @@ function BatchClassify() {
           ลากไฟล์มาวางที่นี่ หรือคลิกเพื่อเลือก
         </div>
         <div className="text-xs text-slate-500 mb-3">
-          รองรับ <strong>.pdf, .docx, .txt, .md</strong> — สูงสุด ๓๐ ไฟล์ต่อครั้ง
+          รองรับ <strong>.pdf, .docx, .txt, .md</strong> — สูงสุด ๓๐ ไฟล์ต่อครั้ง · ขนาดรวมไม่เกิน{" "}
+          {formatBytes(MAX_UPLOAD_BYTES)}
           <br />
           <span className="text-[10px]">PDF แบบ scan ระบบจะใช้ AI Vision อ่านโดยตรง</span>
         </div>
