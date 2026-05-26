@@ -1,5 +1,6 @@
-// 20 realistic Thai government police documents across 6 categories
-// Each has realistic Thai title, file name, extracted OCR text, tags, and confidence
+// 20 realistic Thai government police documents mapped across the 11 TOR
+// work-type categories. Each has realistic Thai title, file name, extracted
+// OCR text, tags, and confidence.
 
 import type { IntelDocument } from "./types";
 
@@ -10,13 +11,13 @@ function daysAgo(n: number): string {
 }
 
 export const SEED_DOCUMENTS: IntelDocument[] = [
-  // ── ยศ. (กองยุทธศาสตร์) — 4 ─────────────────────
+  // ── อื่นๆ — แผนยุทธศาสตร์/วิจัย/บริหารทั่วไป — 8 ─────
   {
     id: "doc-001",
     title: "แผนปฏิบัติราชการประจำปีงบประมาณ พ.ศ. ๒๕๖๙ สำนักงานตำรวจแห่งชาติ",
     fileName: "แผนปฏิบัติราชการ_ตร_2569.pdf",
     fileType: "PDF",
-    category: "ยศ.",
+    category: "อื่นๆ",
     classifierConfidence: 0.96,
     fromUnit: "สยศ.ตร.",
     fromUnitId: "u-bch-sys",
@@ -33,7 +34,7 @@ export const SEED_DOCUMENTS: IntelDocument[] = [
     title: "แผนแม่บทพัฒนาเทคโนโลยีสารสนเทศตำรวจ ระยะ ๕ ปี (พ.ศ. ๒๕๖๘–๒๕๗๒)",
     fileName: "แผนแม่บท_ICT_ตร_2568-2572.pdf",
     fileType: "PDF",
-    category: "ยศ.",
+    category: "อื่นๆ",
     classifierConfidence: 0.92,
     fromUnit: "สยศ.ตร.",
     fromUnitId: "u-bch-sys",
@@ -50,7 +51,7 @@ export const SEED_DOCUMENTS: IntelDocument[] = [
     title: "รายงานผลการดำเนินงานตามตัวชี้วัด KPI ไตรมาสที่ ๒ ปีงบประมาณ ๒๕๖๙",
     fileName: "รายงาน_KPI_Q2_2569.docx",
     fileType: "DOCX",
-    category: "ยศ.",
+    category: "อื่นๆ",
     classifierConfidence: 0.89,
     fromUnit: "สยศ.ตร.",
     fromUnitId: "u-bch-sys",
@@ -66,7 +67,7 @@ export const SEED_DOCUMENTS: IntelDocument[] = [
     title: "ยุทธศาสตร์ตำรวจ ๔.๐ การปฏิรูปองค์กรเพื่อความเป็นเลิศ",
     fileName: "ยุทธศาสตร์ตำรวจ_4.0.pdf",
     fileType: "PDF",
-    category: "ยศ.",
+    category: "อื่นๆ",
     classifierConfidence: 0.94,
     fromUnit: "สยศ.ตร.",
     fromUnitId: "u-bch-sys",
@@ -78,13 +79,13 @@ export const SEED_DOCUMENTS: IntelDocument[] = [
     tags: ["ยุทธศาสตร์", "ปฏิรูป", "Smart Police", "ตำรวจ 4.0"],
   },
 
-  // ── ผบ. (กองแผนงานอำนวยการ) — 4 ─────────────────
+  // ── อื่นๆ (ต่อ) — ระเบียบ/คำสั่ง/หนังสือเวียน ─────
   {
     id: "doc-005",
     title: "ระเบียบสำนักงานตำรวจแห่งชาติว่าด้วยการบริหารงานพัสดุ พ.ศ. ๒๕๖๘",
     fileName: "ระเบียบพัสดุ_ตร_2568.pdf",
     fileType: "PDF",
-    category: "ผบ.",
+    category: "อื่นๆ",
     classifierConfidence: 0.93,
     fromUnit: "ตร.",
     fromUnitId: "u-rtp",
@@ -100,7 +101,7 @@ export const SEED_DOCUMENTS: IntelDocument[] = [
     title: "คำสั่งสำนักงานตำรวจแห่งชาติ ที่ ๒๓๔/๒๕๖๙ เรื่อง การแต่งตั้งคณะกรรมการอำนวยการ",
     fileName: "คำสั่งตร_234_2569.pdf",
     fileType: "PDF",
-    category: "ผบ.",
+    category: "อื่นๆ",
     classifierConfidence: 0.95,
     fromUnit: "ตร.",
     fromUnitId: "u-rtp",
@@ -116,7 +117,7 @@ export const SEED_DOCUMENTS: IntelDocument[] = [
     title: "หนังสือเวียน แนวทางการจัดทำคำของบประมาณรายจ่ายประจำปี ๒๕๗๐",
     fileName: "หนังสือเวียน_งบประมาณ_2570.docx",
     fileType: "DOCX",
-    category: "ผบ.",
+    category: "อื่นๆ",
     classifierConfidence: 0.87,
     fromUnit: "ตร.",
     fromUnitId: "u-rtp",
@@ -132,7 +133,7 @@ export const SEED_DOCUMENTS: IntelDocument[] = [
     title: "บันทึกข้อความ ขอความร่วมมือสนับสนุนการประชุมผู้บริหาร ครั้งที่ ๓/๒๕๖๙",
     fileName: "บันทึก_ประชุมผู้บริหาร_3-2569.docx",
     fileType: "DOCX",
-    category: "ผบ.",
+    category: "อื่นๆ",
     classifierConfidence: 0.82,
     fromUnit: "บช.น.",
     fromUnitId: "u-bch-na",
@@ -144,13 +145,13 @@ export const SEED_DOCUMENTS: IntelDocument[] = [
     tags: ["บันทึกข้อความ", "ประชุม", "บช.น."],
   },
 
-  // ── มค. (กองแผนงานความมั่นคง) — 4 ─────────────
+  // ── งานรักษาความสงบเรียบร้อย / งานกิจการพิเศษและความมั่นคง — 4 ─────
   {
     id: "doc-009",
     title: "แผนการปฏิบัติเพื่อรักษาความสงบเรียบร้อยในช่วงเทศกาลสงกรานต์ ๒๕๖๙",
     fileName: "แผนสงกรานต์_2569.pdf",
     fileType: "PDF",
-    category: "มค.",
+    category: "งานรักษาความสงบเรียบร้อย",
     classifierConfidence: 0.91,
     fromUnit: "บช.น.",
     fromUnitId: "u-bch-na",
@@ -166,7 +167,7 @@ export const SEED_DOCUMENTS: IntelDocument[] = [
     title: "รายงานสถานการณ์ความมั่นคงในพื้นที่ ๓ จังหวัดชายแดนภาคใต้ เดือน เม.ย. ๒๕๖๙",
     fileName: "รายงาน_3จว_ใต้_เม.ย.2569.pdf",
     fileType: "PDF",
-    category: "มค.",
+    category: "งานกิจการพิเศษและความมั่นคง",
     classifierConfidence: 0.94,
     fromUnit: "ภ.๙",
     fromUnitId: "u-bch-9",
@@ -182,7 +183,7 @@ export const SEED_DOCUMENTS: IntelDocument[] = [
     title: "แผนรับมือการชุมนุมทางการเมือง ระยะที่ ๑ พ.ศ. ๒๕๖๙",
     fileName: "แผนชุมนุม_2569.pdf",
     fileType: "PDF",
-    category: "มค.",
+    category: "งานรักษาความสงบเรียบร้อย",
     classifierConfidence: 0.88,
     fromUnit: "บช.น.",
     fromUnitId: "u-bch-na",
@@ -198,7 +199,7 @@ export const SEED_DOCUMENTS: IntelDocument[] = [
     title: "บันทึกข่าวกรอง สถานการณ์กลุ่มเคลื่อนไหวบริเวณชายแดนพม่า",
     fileName: "ข่าวกรอง_ชายแดนพม่า_2569.pdf",
     fileType: "PDF",
-    category: "มค.",
+    category: "งานกิจการพิเศษและความมั่นคง",
     classifierConfidence: 0.89,
     fromUnit: "บช.ตชด.",
     fromUnitId: "u-bch-special-5",
@@ -210,13 +211,13 @@ export const SEED_DOCUMENTS: IntelDocument[] = [
     tags: ["ข่าวกรอง", "ชายแดน", "พม่า", "ความมั่นคง", "ตชด.", "UAV"],
   },
 
-  // ── มข. (กองแผนงานกิจการพิเศษ) — 4 ────────────
+  // ── งานปราบปรามอาชญากรรม / งานกิจการพิเศษและความมั่นคง — 4 ────────────
   {
     id: "doc-013",
     title: "แผนปฏิบัติการปราบปรามยาเสพติด ภาคอีสานตอนบน ปีงบประมาณ ๒๕๖๙",
     fileName: "แผนปราบยาเสพติด_อีสาน_2569.pdf",
     fileType: "PDF",
-    category: "มข.",
+    category: "งานปราบปรามอาชญากรรม",
     classifierConfidence: 0.97,
     fromUnit: "ภ.๔",
     fromUnitId: "u-bch-4",
@@ -232,7 +233,7 @@ export const SEED_DOCUMENTS: IntelDocument[] = [
     title: "รายงานผลการจับกุมเครือข่ายฉ้อโกงออนไลน์ ๒๕๖๙",
     fileName: "รายงาน_จับฉ้อโกงออนไลน์_2569.docx",
     fileType: "DOCX",
-    category: "มข.",
+    category: "งานปราบปรามอาชญากรรม",
     classifierConfidence: 0.93,
     fromUnit: "บช.สอท.",
     fromUnitId: "u-bch-special-2",
@@ -248,7 +249,7 @@ export const SEED_DOCUMENTS: IntelDocument[] = [
     title: "แผนการตรวจคนเข้าเมืองช่วงเทศกาลท่องเที่ยวภูเก็ต ๒๕๖๙",
     fileName: "แผน_ตม_ภูเก็ต_2569.pdf",
     fileType: "PDF",
-    category: "มข.",
+    category: "งานกิจการพิเศษและความมั่นคง",
     classifierConfidence: 0.86,
     fromUnit: "ภ.๘",
     fromUnitId: "u-bch-8",
@@ -264,7 +265,7 @@ export const SEED_DOCUMENTS: IntelDocument[] = [
     title: "บันทึกข้อความ ขอความร่วมมือสืบสวนคดีค้ามนุษย์ข้ามชาติ",
     fileName: "บันทึก_ค้ามนุษย์_2569.pdf",
     fileType: "PDF",
-    category: "มข.",
+    category: "งานปราบปรามอาชญากรรม",
     classifierConfidence: 0.90,
     fromUnit: "บช.ก.",
     fromUnitId: "u-bch-special-3",
@@ -276,13 +277,13 @@ export const SEED_DOCUMENTS: IntelDocument[] = [
     tags: ["ค้ามนุษย์", "บช.ก.", "Interpol", "ข้ามชาติ"],
   },
 
-  // ── วจ. (กองวิจัย) — 2 ────────────────────────
+  // ── อื่นๆ (วิจัย) — 2 ────────────────────────
   {
     id: "doc-017",
     title: "รายงานผลการวิจัย ปัจจัยที่ส่งผลต่อความพึงพอใจของประชาชนต่องานตำรวจ",
     fileName: "วิจัย_ความพึงพอใจ_2568.pdf",
     fileType: "PDF",
-    category: "วจ.",
+    category: "อื่นๆ",
     classifierConfidence: 0.95,
     fromUnit: "สยศ.ตร.",
     fromUnitId: "u-bch-sys",
@@ -298,7 +299,7 @@ export const SEED_DOCUMENTS: IntelDocument[] = [
     title: "ผลการศึกษาแนวโน้มอาชญากรรมไซเบอร์ในประเทศไทย พ.ศ. ๒๕๖๘",
     fileName: "วิจัย_อาชญากรรมไซเบอร์_2568.pdf",
     fileType: "PDF",
-    category: "วจ.",
+    category: "อื่นๆ",
     classifierConfidence: 0.94,
     fromUnit: "สยศ.ตร.",
     fromUnitId: "u-bch-sys",
@@ -310,13 +311,13 @@ export const SEED_DOCUMENTS: IntelDocument[] = [
     tags: ["วิจัย", "ไซเบอร์", "อาชญากรรมออนไลน์", "scam", "แนวโน้ม"],
   },
 
-  // ── อจ. (ฝ่ายอำนวยการ สยศ.ตร.) — 2 ────────────
+  // ── อื่นๆ (ธุรการ) / งานบริหารทรัพยากรบุคคล — 2 ────────────
   {
     id: "doc-019",
     title: "บันทึกข้อความ แจ้งกำหนดการประชุม EOP ครั้งที่ ๕/๒๕๖๙",
     fileName: "บันทึก_ประชุม_EOP_5-2569.docx",
     fileType: "DOCX",
-    category: "อจ.",
+    category: "อื่นๆ",
     classifierConfidence: 0.83,
     fromUnit: "สยศ.ตร.",
     fromUnitId: "u-bch-sys",
@@ -332,7 +333,7 @@ export const SEED_DOCUMENTS: IntelDocument[] = [
     title: "หนังสือเวียน การลงเวลาปฏิบัติราชการของเจ้าหน้าที่ สยศ.ตร.",
     fileName: "หนังสือเวียน_ลงเวลา_สยศ.docx",
     fileType: "DOCX",
-    category: "อจ.",
+    category: "งานบริหารทรัพยากรบุคคลและฝึกอบรม",
     classifierConfidence: 0.80,
     fromUnit: "สยศ.ตร.",
     fromUnitId: "u-bch-sys",

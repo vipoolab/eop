@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Tags, ChevronLeft } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { listDocuments } from "@/lib/intelligence/store";
-import { DOC_CATEGORIES, CATEGORY_DESCRIPTIONS } from "@/lib/intelligence/types";
+import { DOC_CATEGORIES, CATEGORY_STYLES } from "@/lib/intelligence/types";
 import { ClassifyDemo } from "./classify-demo";
 
 export const dynamic = "force-dynamic";
@@ -28,7 +28,7 @@ export default function ClassifyPage() {
         icon={Tags}
         eyebrow="ระบบ AI"
         title="จำแนกประเภทเอกสารอัตโนมัติ"
-        description="AI Classifier วิเคราะห์เอกสารและจัดเข้า ๖ หมวด (ยศ./ผบ./มค./มข./วจ./อจ.) โดยใช้คีย์เวิร์ดและเนื้อหา"
+        description="AI Classifier วิเคราะห์เอกสารและจัดเข้า ๑๑ หมวด ตามประเภทงาน (TOR EOP ข้อ ๔) โดยใช้คีย์เวิร์ดและเนื้อหา"
         live
         actions={
           <Link
@@ -41,17 +41,14 @@ export default function ClassifyPage() {
         }
       />
 
-      {/* Category legend */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+      {/* Category legend — 11 work-type categories per TOR */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
         {DOC_CATEGORIES.map((cat) => (
           <div
             key={cat}
-            className="rounded-sm border border-slate-200 bg-white px-3 py-2 text-center"
+            className={`rounded-sm border px-3 py-2 text-center text-xs font-semibold leading-tight ${CATEGORY_STYLES[cat]}`}
           >
-            <div className="text-lg font-bold text-[#1e3a5f]">{cat}</div>
-            <div className="text-[10px] text-slate-600 mt-0.5 leading-tight">
-              {CATEGORY_DESCRIPTIONS[cat]}
-            </div>
+            {cat}
           </div>
         ))}
       </div>

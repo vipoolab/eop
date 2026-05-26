@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 import {
   CATEGORY_STYLES,
-  CATEGORY_DESCRIPTIONS,
   DOC_CATEGORIES,
   type DocCategory,
 } from "@/lib/intelligence/types";
@@ -38,13 +37,11 @@ interface SingleClassifyResult {
     category: DocCategory;
     matches: string[];
     confidence: number;
-    categoryDescription: string;
   }[];
   allResults: {
     category: DocCategory;
     matches: string[];
     confidence: number;
-    categoryDescription: string;
   }[];
   predicted: DocCategory;
   predictedConfidence: number;
@@ -65,7 +62,6 @@ interface BatchEntry {
     predictedConfidence: number;
     results: {
       category: DocCategory;
-      categoryDescription: string;
       confidence: number;
       matches: string[];
     }[];
@@ -92,34 +88,34 @@ type Mode = "single" | "batch";
 
 const EXAMPLE_TEXTS = [
   {
-    label: "ตัวอย่าง: ยุทธศาสตร์",
-    expectedCategory: "ยศ." as DocCategory,
-    text: "แผนปฏิบัติราชการประจำปีงบประมาณ ๒๕๖๙ จัดทำขึ้นโดยให้สอดคล้องกับยุทธศาสตร์ชาติ ๒๐ ปี และแผนแม่บทภายใต้ยุทธศาสตร์ชาติ กำหนดตัวชี้วัด KPI จำนวน ๔๒ ตัว",
+    label: "ตัวอย่าง: ปราบปรามอาชญากรรม",
+    expectedCategory: "งานปราบปรามอาชญากรรม" as DocCategory,
+    text: "รายงานผลการจับกุมเครือข่ายฉ้อโกงออนไลน์ของกองบัญชาการตำรวจสืบสวนสอบสวนอาชญากรรมทางเทคโนโลยี จับกุมผู้ต้องหา ๑,๒๔๖ ราย แบ่งเป็นแก๊งคอลเซ็นเตอร์ และแก๊งหลอกลงทุน ยึดทรัพย์มูลค่ารวม ๑,๘๔๕ ล้านบาท",
+  },
+  {
+    label: "ตัวอย่าง: ป้องกันอาชญากรรม",
+    expectedCategory: "งานป้องกันอาชญากรรม" as DocCategory,
+    text: "แผนสายตรวจชุมชนและการตั้งจุดตรวจในพื้นที่เสี่ยง ครอบคลุม ๒๔ ชุมชนเป้าหมาย จัดประชาสัมพันธ์ป้องกันภัยและฝึกอบรมอาสาสมัครเฝ้าระวังในตู้แดง ๖๔ จุด",
+  },
+  {
+    label: "ตัวอย่าง: จราจร",
+    expectedCategory: "งานจราจรและอุบัติเหตุ" as DocCategory,
+    text: "รายงานสถิติอุบัติเหตุจราจรในช่วงเทศกาลสงกรานต์ พบอุบัติเหตุรวม ๑,๒๓๔ ครั้ง สาเหตุหลักจากเมาแล้วขับและขับรถเร็วเกินกำหนด ตั้งด่านตรวจตรวจวัดแอลกอฮอล์ ๑๒๐ จุดทั่วประเทศ",
   },
   {
     label: "ตัวอย่าง: ความมั่นคง",
-    expectedCategory: "มค." as DocCategory,
+    expectedCategory: "งานกิจการพิเศษและความมั่นคง" as DocCategory,
     text: "รายงานสถานการณ์ความมั่นคงในพื้นที่ ๓ จังหวัดชายแดนภาคใต้ ปัตตานี ยะลา นราธิวาส รายงานเหตุการณ์ความรุนแรงและการก่อความวุ่นวาย พร้อมข้อมูลข่าวกรองเกี่ยวกับกลุ่มเคลื่อนไหว",
   },
   {
-    label: "ตัวอย่าง: กิจการพิเศษ",
-    expectedCategory: "มข." as DocCategory,
-    text: "แผนปฏิบัติการปราบปรามยาเสพติดในพื้นที่ภาคอีสานตอนบน บูรณาการกับ ป.ป.ส. และ ตชด. เน้นการสกัดที่ชายแดนและปราบปรามขบวนการค้ายาเสพติด",
+    label: "ตัวอย่าง: บรรเทาสาธารณภัย",
+    expectedCategory: "งานบรรเทาสาธารณภัย" as DocCategory,
+    text: "รายงานการช่วยเหลือผู้ประสบอุทกภัยในจังหวัดสุโขทัย ส่งกำลัง ๒๓๐ นาย เรือท้องแบน ๑๘ ลำ ค้นหาและอพยพประชาชน ๑,๔๒๐ คน ออกจากพื้นที่น้ำท่วม พร้อมตั้งศูนย์พักพิงชั่วคราว",
   },
   {
-    label: "ตัวอย่าง: วิจัย",
-    expectedCategory: "วจ." as DocCategory,
-    text: "รายงานผลการวิจัยปัจจัยที่ส่งผลต่อความพึงพอใจของประชาชนต่องานตำรวจ กลุ่มตัวอย่าง ๔,๒๐๐ คน วิเคราะห์ทางสถิติ พบว่าความเร็วในการตอบสนองมีอิทธิพลสูงสุด β = 0.42",
-  },
-  {
-    label: "ตัวอย่าง: อำนวยการ",
-    expectedCategory: "ผบ." as DocCategory,
-    text: "คำสั่งสำนักงานตำรวจแห่งชาติ ที่ ๔๒๐/๒๕๖๗ เรื่อง การจัดสรรงบประมาณรายจ่าย ประจำปีงบประมาณ ๒๕๖๘ ให้กับหน่วยงานในสังกัด ตามระเบียบกระทรวงการคลัง",
-  },
-  {
-    label: "ตัวอย่าง: ธุรการ",
-    expectedCategory: "อจ." as DocCategory,
-    text: "บันทึกข้อความ เรียน ผอ.ฝ่ายอำนวยการ เรื่อง ขอเชิญประชุมประจำสัปดาห์ วันพุธที่ ๒๖ พ.ค. เวลา ๐๙.๓๐ น. ณ ห้องประชุม สยศ.ตร. โดยมีระเบียบวาระตามที่แจ้งเวียน",
+    label: "ตัวอย่าง: บริหารบุคคล",
+    expectedCategory: "งานบริหารทรัพยากรบุคคลและฝึกอบรม" as DocCategory,
+    text: "ประกาศการเปิดรับสมัครหลักสูตรฝึกอบรมข้าราชการตำรวจชั้นสัญญาบัตร ประจำปี ๒๕๖๙ ระยะเวลา ๔ เดือน ครอบคลุมการสืบสวน การปฏิบัติงานชุมชน และการใช้เทคโนโลยีดิจิทัล",
   },
 ];
 
@@ -267,13 +263,10 @@ function ResultPanel({
             หมวดที่ทำนาย
           </div>
           <div className="flex items-center gap-3 flex-wrap">
-            <div className={`text-2xl font-bold px-3 py-1.5 rounded-sm border ${CATEGORY_STYLES[result.predicted]}`}>
+            <div className={`text-base font-bold px-3 py-1.5 rounded-sm border ${CATEGORY_STYLES[result.predicted]}`}>
               {result.predicted}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                {result.results[0].categoryDescription}
-              </div>
               <div className="text-xs text-slate-500 dark:text-slate-400">
                 ความมั่นใจ {(result.predictedConfidence * 100).toFixed(1)}%
               </div>
@@ -290,34 +283,29 @@ function ResultPanel({
           </div>
         </div>
 
-        {/* All 6 categories with bars */}
+        {/* All 11 categories with bars */}
         <div>
           <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-2">
-            ความน่าจะเป็นของทั้ง ๖ หมวด
+            ความน่าจะเป็นของทั้ง ๑๑ หมวด
           </div>
           <div className="space-y-2">
             {result.allResults.map((r, i) => (
-              <div key={r.category} className="flex items-center gap-3">
-                <div className={`text-xs font-bold px-2 py-1 rounded-sm border w-14 text-center ${CATEGORY_STYLES[r.category]}`}>
-                  {r.category}
+              <div key={r.category} className="space-y-1">
+                <div className="flex items-center justify-between gap-3 text-xs">
+                  <span className={`font-semibold px-2 py-0.5 rounded-sm border ${CATEGORY_STYLES[r.category]}`}>
+                    {r.category}
+                  </span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100 tabular-nums shrink-0">
+                    {(r.confidence * 100).toFixed(1)}%
+                  </span>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-0.5 text-xs">
-                    <span className="text-slate-600 dark:text-slate-300">
-                      {r.categoryDescription}
-                    </span>
-                    <span className="font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
-                      {(r.confidence * 100).toFixed(1)}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-sm h-2">
-                    <div
-                      className={`h-full rounded-sm transition-all ${
-                        i === 0 ? "bg-emerald-500" : i === 1 ? "bg-amber-400" : "bg-slate-300 dark:bg-slate-600"
-                      }`}
-                      style={{ width: `${r.confidence * 100}%` }}
-                    />
-                  </div>
+                <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-sm h-2">
+                  <div
+                    className={`h-full rounded-sm transition-all ${
+                      i === 0 ? "bg-emerald-500" : i === 1 ? "bg-amber-400" : "bg-slate-300 dark:bg-slate-600"
+                    }`}
+                    style={{ width: `${r.confidence * 100}%` }}
+                  />
                 </div>
               </div>
             ))}
@@ -619,22 +607,21 @@ function BatchResults({ result }: { result: BatchResult }) {
         {/* Per-category distribution */}
         <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
           <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-2">
-            จำแนกเข้า ๖ หมวด
+            จำแนกเข้า ๑๑ หมวด
           </div>
-          <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
             {DOC_CATEGORIES.map((cat) => {
               const n = result.summary.byCategory[cat] ?? 0;
               const pct = result.summary.successful > 0 ? (n / result.summary.successful) * 100 : 0;
               return (
                 <div
                   key={cat}
-                  className={`rounded-sm border p-2.5 text-center ${CATEGORY_STYLES[cat]}`}
+                  className={`rounded-sm border p-2.5 ${CATEGORY_STYLES[cat]}`}
                 >
-                  <div className="text-xs font-bold">{cat}</div>
-                  <div className="text-xl font-bold leading-none mt-1">{n}</div>
-                  <div className="text-[10px] mt-0.5 opacity-70">{pct.toFixed(0)}%</div>
-                  <div className="text-[9px] mt-0.5 leading-tight opacity-60 line-clamp-1">
-                    {CATEGORY_DESCRIPTIONS[cat]}
+                  <div className="text-[11px] font-bold leading-tight line-clamp-2">{cat}</div>
+                  <div className="flex items-baseline gap-2 mt-1">
+                    <span className="text-xl font-bold leading-none">{n}</span>
+                    <span className="text-[10px] opacity-70">{pct.toFixed(0)}%</span>
                   </div>
                 </div>
               );

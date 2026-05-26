@@ -1,16 +1,13 @@
-// AI Doc Classifier — classifies Thai government documents into 6 categories
-// using the best available model. Falls back to keyword scoring if AI is unavailable.
+// AI Doc Classifier — classifies Thai government police documents into 11
+// work-type categories per TOR EOP ข้อ (๔), using the best available model.
+// Falls back to keyword scoring if AI is unavailable.
 //
 // Supports:
 //  - Plain text input (fastest)
 //  - PDF via vision input (most accurate for scanned PDFs)
 
 import { getClaude, MODELS, parseClaudeJson } from "@/lib/claude";
-import {
-  DOC_CATEGORIES,
-  CATEGORY_DESCRIPTIONS,
-  CATEGORY_KEYWORDS,
-} from "./types";
+import { DOC_CATEGORIES, CATEGORY_KEYWORDS } from "./types";
 import type { DocCategory } from "./types";
 import type Anthropic from "@anthropic-ai/sdk";
 
@@ -19,7 +16,6 @@ export interface ClassifyResult {
   predictedConfidence: number;
   results: {
     category: DocCategory;
-    categoryDescription: string;
     confidence: number;
     matches: string[];
   }[];
@@ -35,9 +31,14 @@ interface AIClassifyResponse {
   matchedKeywords: string[];
 }
 
+// Even distribution across all 11 categories sums to 1.0 — used when parse fails.
+const FALLBACK_CONFIDENCES = Object.fromEntries(
+  DOC_CATEGORIES.map((cat) => [cat, cat === "อื่นๆ" ? 1 : 0])
+) as Record<DocCategory, number>;
+
 const FALLBACK_RESPONSE: AIClassifyResponse = {
-  predicted: "อจ.",
-  confidences: { "ยศ.": 0, "ผบ.": 0, "มค.": 0, "มข.": 0, "วจ.": 0, "อจ.": 1 },
+  predicted: "อื่นๆ",
+  confidences: FALLBACK_CONFIDENCES,
   reasoning: "ไม่สามารถวิเคราะห์ได้ — fallback",
   matchedKeywords: [],
 };
@@ -45,25 +46,41 @@ const FALLBACK_RESPONSE: AIClassifyResponse = {
 // ── AI Classifier ──────────────────────────────
 
 function buildSystemPrompt(): string {
-  return `คุณเป็นผู้เชี่ยวชาญด้านการจำแนกประเภทเอกสารราชการ ของสำนักงานยุทธศาสตร์ตำรวจ (สยศ.ตร.)
-ภารกิจ: อ่านเอกสาร แล้วจำแนกประเภทเข้า ๑ ใน ๖ หมวด ตามลักษณะเนื้อหา:
+  return `คุณเป็นผู้เชี่ยวชาญด้านการจำแนกประเภทเอกสารราชการของสำนักงานตำรวจแห่งชาติ
+ภารกิจ: อ่านเอกสาร แล้วจำแนกประเภทเข้า ๑ ใน ๑๑ หมวด ตามประเภทงาน (TOR EOP ข้อ ๔)
+
+หมวดงาน ๑๐ หมวดเฉพาะ + "อื่นๆ" สำหรับเอกสารทั่วไป:
 
 ${DOC_CATEGORIES.map(
-    (c) =>
-      `- **${c}** (${CATEGORY_DESCRIPTIONS[c]}) — keywords ที่บ่งชี้: ${CATEGORY_KEYWORDS[c].join(", ")}`
+    (c, i) =>
+      `${i + 1}. **${c}** — keywords: ${CATEGORY_KEYWORDS[c].join(", ")}`
   ).join("\n")}
 
-หลักการ:
-- พิจารณาเนื้อหาทั้งหมด ไม่ใช่แค่หัวข้อ
-- เอกสารที่มี keywords ของหลายหมวด ให้เลือกหมวดที่ "ใจความสำคัญหลัก" อยู่
-- เอกสารวางแผน ตัวชี้วัด ยุทธศาสตร์ → ยศ.
-- เอกสารบริหารทั่วไป คำสั่ง ระเบียบงาน → ผบ.
-- เอกสารด้านความมั่นคง การข่าวกรอง ก่อการร้าย → มค.
-- เอกสารด้านปราบปราม ยาเสพติด ภารกิจพิเศษ → มข.
-- เอกสารด้านวิจัย การศึกษา ข้อมูลสถิติ → วจ.
-- เอกสารธุรการทั่วไป บันทึกข้อความ เวียน → อจ.
-- เมื่อไม่แน่ใจ ให้คะแนนกระจายอย่างสมเหตุสมผล (เช่น 0.55/0.30/0.10/0.05/...)`;
+หลักการตัดสินใจ (สำคัญ — อ่านก่อนตอบ):
+1. **พยายามจัดเข้า ๑๐ หมวดเฉพาะก่อน** ถ้าเนื้อหาเกี่ยวข้องกับงานปฏิบัติของตำรวจ — เช่น เอกสารเรื่อง "การจับกุม/สืบสวน/ดำเนินคดี" = งานปราบปรามอาชญากรรม แม้จะเป็นแค่ "รายงานผล" ก็ตาม
+2. **"อื่นๆ" ใช้เฉพาะกรณีที่เนื้อหาไม่ใช่งานปฏิบัติเฉพาะของตำรวจ** เช่น แผนยุทธศาสตร์ระดับองค์กร, ระเบียบพัสดุ, หนังสือเวียนทั่วไป, รายงานวิจัยเชิงวิชาการ, บันทึกประชุมบริหาร
+3. **พิจารณาเนื้อหาทั้งหมด** ไม่ใช่แค่หัวข้อหรือชื่อไฟล์
+4. **ถ้าเข้าได้หลายหมวด** ให้เลือกหมวดที่ "ใจความสำคัญหลัก" อยู่ และให้คะแนนหมวดรองที่ ๐.๑–๐.๓
+5. **predicted ต้องตรงกับหมวดที่ confidences สูงสุดเสมอ**
+
+ตัวอย่างเส้นทางการตัดสินใจ:
+- "รายงานจับกุมแก๊งคอลเซ็นเตอร์" → งานปราบปรามอาชญากรรม (ไม่ใช่ "อื่นๆ" เพียงเพราะเป็นรายงาน)
+- "แผนสายตรวจชุมชน" → งานป้องกันอาชญากรรม
+- "สถิติอุบัติเหตุสงกรานต์" → งานจราจรและอุบัติเหตุ
+- "รายงานประจำปี ตร." → อื่นๆ (เป็นเอกสารบริหารระดับองค์กร)
+- "ระเบียบพัสดุ" → อื่นๆ (เป็นระเบียบทั่วไป ไม่เกี่ยวกับงานปฏิบัติเฉพาะ)`;
 }
+
+const JSON_SCHEMA_BLOCK = `{
+  "predicted": "<หนึ่งใน ๑๑ หมวด ตามรายชื่อใน system prompt>",
+  "confidences": {
+${DOC_CATEGORIES.map((c) => `    "${c}": 0.0-1.0`).join(",\n")}
+  },
+  "reasoning": "เหตุผลที่จำแนกเข้าหมวดนี้ (๑-๒ ประโยค)",
+  "matchedKeywords": ["keyword1", "keyword2", ...]
+}
+
+หมายเหตุ: confidences ทุกหมวดรวมแล้วต้องเท่ากับ 1.0`;
 
 function buildUserPrompt(text: string, filename?: string): string {
   const truncated = text.length > 6000 ? text.slice(0, 6000) + "\n[...truncated]" : text;
@@ -75,46 +92,21 @@ ${truncated}
 
 ตอบกลับเป็น JSON เท่านั้น ตาม schema:
 
-{
-  "predicted": "<หมวดที่ทำนาย: ยศ./ผบ./มค./มข./วจ./อจ.>",
-  "confidences": {
-    "ยศ.": 0.0-1.0,
-    "ผบ.": 0.0-1.0,
-    "มค.": 0.0-1.0,
-    "มข.": 0.0-1.0,
-    "วจ.": 0.0-1.0,
-    "อจ.": 0.0-1.0
-  },
-  "reasoning": "เหตุผลที่จำแนกเข้าหมวดนี้ (๑-๒ ประโยค)",
-  "matchedKeywords": ["keyword1", "keyword2", ...]
-}
-
-หมายเหตุ: confidences ทุกหมวดรวมแล้วต้องเท่ากับ 1.0`;
+${JSON_SCHEMA_BLOCK}`;
 }
 
 function buildPdfUserPrompt(filename: string): string {
   return `## ชื่อไฟล์
 ${filename}
 
-อ่านเนื้อหาในเอกสาร PDF ข้างต้น แล้วจำแนกประเภทเข้า ๑ ใน ๖ หมวด ตามที่ระบุใน system prompt
+อ่านเนื้อหาในเอกสาร PDF ข้างต้น แล้วจำแนกประเภทเข้า ๑ ใน ๑๑ หมวด ตามที่ระบุใน system prompt
 
 ตอบกลับเป็น JSON เท่านั้น ตาม schema:
 
-{
-  "predicted": "<หมวดที่ทำนาย: ยศ./ผบ./มค./มข./วจ./อจ.>",
-  "confidences": {
-    "ยศ.": 0.0-1.0,
-    "ผบ.": 0.0-1.0,
-    "มค.": 0.0-1.0,
-    "มข.": 0.0-1.0,
-    "วจ.": 0.0-1.0,
-    "อจ.": 0.0-1.0
-  },
-  "reasoning": "เหตุผลที่จำแนกเข้าหมวดนี้ (๑-๒ ประโยค) — อ้างถึงเนื้อหาในเอกสาร",
-  "matchedKeywords": ["keyword จากเอกสาร 1", "keyword 2", ...]
-}
-
-หมายเหตุ: confidences ทุกหมวดรวมแล้วต้องเท่ากับ 1.0`;
+${JSON_SCHEMA_BLOCK.replace(
+    `"reasoning": "เหตุผลที่จำแนกเข้าหมวดนี้ (๑-๒ ประโยค)"`,
+    `"reasoning": "เหตุผลที่จำแนกเข้าหมวดนี้ (๑-๒ ประโยค) — อ้างถึงเนื้อหาในเอกสาร"`
+  )}`;
 }
 
 export async function classifyWithAI(
@@ -132,7 +124,7 @@ export async function classifyWithAI(
 
   try {
     const response = await client.messages.create({
-      model: MODELS.OPUS, // ← upgraded to highest-accuracy model
+      model: MODELS.OPUS, // ← highest-accuracy model
       max_tokens: 1024,
       system: buildSystemPrompt(),
       messages: [{ role: "user", content: buildUserPrompt(text, filename) }],
@@ -158,7 +150,7 @@ export async function classifyPDFWithAI(
   try {
     client = getClaude();
   } catch {
-    return keywordClassify("", start); // empty fallback
+    return keywordClassify("", start);
   }
 
   try {
@@ -211,7 +203,6 @@ function parseClassifierResponse(
 
   const results = DOC_CATEGORIES.map((cat) => ({
     category: cat,
-    categoryDescription: CATEGORY_DESCRIPTIONS[cat],
     confidence: Number((parsed.confidences[cat] ?? 0).toFixed(3)),
     matches: [] as string[],
   })).sort((a, b) => b.confidence - a.confidence);
@@ -252,7 +243,6 @@ function keywordClassify(text: string, start: number): ClassifyResult {
   const results = scores
     .map((s) => ({
       category: s.category,
-      categoryDescription: CATEGORY_DESCRIPTIONS[s.category],
       confidence: Number((s.score / total).toFixed(3)),
       matches: s.matches,
     }))
