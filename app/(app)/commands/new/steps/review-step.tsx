@@ -22,12 +22,17 @@ function toThaiNumeral(n: number): string {
     .map((c) => (c >= "0" && c <= "9" ? THAI_DIGIT[Number(c)] : c))
     .join("");
 }
-function thaiDate(d: Date): string {
+function thaiDate(d: Date, style: "abbreviated" | "full" = "abbreviated"): string {
   const months = [
     "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
     "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม",
   ];
-  return `${toThaiNumeral(d.getDate())} ${months[d.getMonth()]} พ.ศ. ${toThaiNumeral(d.getFullYear() + 543)}`;
+  const day = toThaiNumeral(d.getDate());
+  const month = months[d.getMonth()];
+  const year = toThaiNumeral(d.getFullYear() + 543);
+  return style === "full"
+    ? `${day} เดือน ${month} พุทธศักราช ${year}`
+    : `${day} ${month} พ.ศ. ${year}`;
 }
 
 interface Props {
@@ -151,17 +156,32 @@ export function ReviewStep({ state }: Props) {
             <Garuda size={56} className="text-slate-800" />
           </div>
 
-          {/* Header block */}
-          <div className="text-center space-y-1 mb-3">
-            <div className="text-base font-semibold">คำสั่งสำนักงานตำรวจแห่งชาติ</div>
-            <div>ที่ {"...../๒๕๖๙"}</div>
-            <div>เรื่อง  {letter.subject.replace(/^\s*เรื่อง\s*/, "")}</div>
+          {/* Header block — คำสั่ง<หน่วย> + ที่ + เรื่อง */}
+          <div className="text-center space-y-1 mb-2">
+            <div className="text-base font-semibold">
+              คำสั่ง{letter.unitFullName ?? "สำนักงานตำรวจแห่งชาติ"}
+            </div>
+            <div>ที่ {letter.docNumber ?? "...../๒๕๖๙"}</div>
+            <div className="px-6">
+              เรื่อง  {letter.subject.replace(/^\s*เรื่อง\s*/, "")}
+              {letter.subjectSuffix && <span> {letter.subjectSuffix}</span>}
+            </div>
           </div>
 
-          {/* Divider */}
-          <div className="flex justify-center my-3">
-            <div className="border-t border-slate-700 w-32" />
-          </div>
+          {/* Divider — style depends on issuing unit */}
+          {letter.dividerStyle === "asterisks" && (
+            <div className="text-center my-2 tracking-widest text-sm">
+              ******************************
+            </div>
+          )}
+          {letter.dividerStyle === "underline" && (
+            <div className="flex justify-center my-2">
+              <div className="border-t border-slate-700 w-2/3" />
+            </div>
+          )}
+          {(!letter.dividerStyle || letter.dividerStyle === "none") && (
+            <div className="my-3" />
+          )}
 
           {/* Body */}
           {letter.objective && (
@@ -181,6 +201,11 @@ export function ReviewStep({ state }: Props) {
               </p>
             ))}
           </div>
+          {letter.isAmendment && (
+            <p className="text-justify my-3" style={{ textIndent: "2.5em" }}>
+              นอกนั้นให้เป็นไปตามคำสั่งเดิมทุกประการ
+            </p>
+          )}
           {letter.effectiveClause && (
             <p className="text-justify my-3" style={{ textIndent: "2.5em" }}>
               {letter.effectiveClause}
@@ -189,10 +214,11 @@ export function ReviewStep({ state }: Props) {
 
           {/* Signed at + Signature */}
           <div className="text-center mt-8 mb-2">
-            สั่ง ณ วันที่ {thaiDate(new Date())}
+            สั่ง ณ วันที่ {thaiDate(new Date(), letter.dateStyle)}
           </div>
-          <div className="text-center mt-8 space-y-0.5">
-            <div className="mx-auto border-b border-slate-400 w-64 mb-1" />
+          <div className="text-center mt-6 space-y-0.5">
+            <div className="italic text-slate-400 text-sm">(ลายมือชื่อ)</div>
+            {letter.signerRank && <div>{letter.signerRank}</div>}
             <div>(ชื่อ-นามสกุลผู้สั่งการ)</div>
             <div>ตำแหน่งผู้สั่งการ</div>
             <div className="mt-2 text-xs text-slate-500 italic">

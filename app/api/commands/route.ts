@@ -105,6 +105,17 @@ export async function POST(req: NextRequest) {
   let status: Command["status"];
   const letter: CommandLetter = { ...body.letter, docNumber: body.letter.docNumber ?? docNumber };
 
+  // ── Populate v3 header/signature fields from persona (for คำสั่ง format) ──
+  // Header unit name — full name of the issuing unit (or ตร. as fallback)
+  letter.unitFullName = letter.unitFullName ?? userUnit?.name ?? "สำนักงานตำรวจแห่งชาติ";
+  // Signer rank line (above the parenthetical name)
+  letter.signerRank = letter.signerRank ?? persona.rank;
+  // Date/divider style: HQ-level units (bureau or ตร.) use abbreviated date + no
+  // divider; station-level (level 3) uses the full date words + asterisk divider.
+  const isStationLevel = (userUnit?.level ?? 0) >= 3;
+  letter.dateStyle = letter.dateStyle ?? (isStationLevel ? "full" : "abbreviated");
+  letter.dividerStyle = letter.dividerStyle ?? (isStationLevel ? "asterisks" : "none");
+
   if (action === "draft") {
     status = "DRAFT";
   } else if (action === "submit") {

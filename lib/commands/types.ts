@@ -105,6 +105,35 @@ export interface CommandLetter {
   signatureApplied?: boolean;
   signatureText?: string;
   signatureAppliedAt?: string;
+
+  // ───── v3 fields (match real RTP คำสั่ง samples) ─────
+  /**
+   * ชื่อเต็มหน่วยที่ออกคำสั่ง — ใช้ใน header "คำสั่ง<unitFullName>"
+   * เช่น "สำนักงานตำรวจแห่งชาติ" หรือ "สถานีตำรวจภูธรบ้านหลวง จังหวัดน่าน"
+   * ถ้าไม่ระบุ default = "สำนักงานตำรวจแห่งชาติ"
+   */
+  unitFullName?: string;
+  /** ต่อท้าย subject เช่น "(เพิ่มเติม)" / "(ฉบับที่ ๒)" */
+  subjectSuffix?: string;
+  /**
+   * true → เป็นคำสั่งแก้ไข/เพิ่มเติมคำสั่งเดิม
+   * → ใช้คำลงท้าย "นอกนั้นให้เป็นไปตามคำสั่งเดิมทุกประการ"
+   */
+  isAmendment?: boolean;
+  /** ยศของผู้ลงนาม (บรรทัดบน signature) เช่น "พลตำรวจเอก" */
+  signerRank?: string;
+  /**
+   * กรณีลงนามแทน — "ปฏิบัติราชการแทน" + ตำแหน่งเจ้าของอำนาจ
+   * เช่น signerTitle="รองผู้บัญชาการตำรวจแห่งชาติ ปฏิบัติราชการแทน"
+   *      signerActingFor="ผู้บัญชาการตำรวจแห่งชาติ"
+   */
+  signerActingFor?: string;
+  /** "นิยาม" — คำศัพท์ที่นิยามไว้ต้นคำสั่ง (optional) */
+  glossary?: { term: string; definition: string }[];
+  /** รูปแบบวันที่: "abbreviated" = พ.ศ. (ตร.) / "full" = เดือน...พุทธศักราช (สภ.) */
+  dateStyle?: "abbreviated" | "full";
+  /** เส้นคั่นใต้ "เรื่อง": none (ตร.) / asterisks (สภ.) / underline */
+  dividerStyle?: "none" | "asterisks" | "underline";
 }
 
 // ── Plan alignment ────────────────────────────
