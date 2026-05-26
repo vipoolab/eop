@@ -5,7 +5,8 @@ import { draftCommand, gatherCandidatePlans } from "@/lib/commands/drafter";
 import { getActivePersona, getUnit, getCommandableUnits } from "@/lib/police-org/store";
 
 export const runtime = "nodejs";
-export const maxDuration = 120;
+// Vercel Hobby plan caps maxDuration at 60s. vercel.json controls this — keep in sync.
+export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
   const body = await req.json();

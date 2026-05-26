@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { useRouter } from "next/navigation";
 import {
   UploadCloud,
   FileText,
@@ -45,7 +44,6 @@ const PROCESSING_STEPS = [
 ];
 
 export function OcrDemo() {
-  const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [groundTruth, setGroundTruth] = useState("");
@@ -117,16 +115,17 @@ export function OcrDemo() {
       fd.append("file", file);
       if (groundTruth.trim()) fd.append("groundTruth", groundTruth);
 
-      // Use async endpoint — kicks off background task + returns taskId
-      const res = await fetch("/api/intelligence/ocr/async", {
+      // Sync endpoint — Vercel serverless requires inline processing
+      const res = await fetch("/api/intelligence/ocr", {
         method: "POST",
         body: fd,
       });
       const j = await res.json();
       clearInterval(stepTimer);
-      if (j.success && j.data.taskId) {
-        // Navigate to task page where polling + result display happens
-        router.push(`/tasks/${j.data.taskId}`);
+      if (j.success && j.data) {
+        setResult(j.data);
+        setEditedText(j.data.extractedText ?? "");
+        setStep(PROCESSING_STEPS.length - 1);
       } else {
         setError(j.message ?? "ส่งงานไม่สำเร็จ");
         setStep(-1);

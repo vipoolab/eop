@@ -5,9 +5,10 @@
   "installCommand": "npm install",
   "regions": ["sin1"],
   "functions": {
-    "app/api/ai/draft/route.ts": { "maxDuration": 60 },
-    "app/api/ai/classify/route.ts": { "maxDuration": 60 },
-    "app/api/ai/ocr/route.ts": { "maxDuration": 90 },
+    "app/api/commands/draft/route.ts": { "maxDuration": 60 },
+    "app/api/intelligence/classify/route.ts": { "maxDuration": 60 },
+    "app/api/intelligence/classify/batch/route.ts": { "maxDuration": 60 },
+    "app/api/intelligence/ocr/route.ts": { "maxDuration": 60 },
     "app/api/search/route.ts": { "maxDuration": 30 }
   },
   "env": {

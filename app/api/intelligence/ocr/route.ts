@@ -9,7 +9,9 @@ import type { OcrFileType } from "@/lib/intelligence/ocr";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-export const maxDuration = 120;
+// Vercel Hobby plan caps maxDuration at 60s. PDF page batching is done client-side
+// (see commit bef37a2) so per-batch should fit comfortably.
+export const maxDuration = 60;
 
 function detectFileType(filename: string, mimeType: string): OcrFileType | null {
   const name = filename.toLowerCase();

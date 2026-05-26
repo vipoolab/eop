@@ -118,52 +118,27 @@ export function DraftStep({ fields, intent, draft, onDraftReceived, onChange }: 
       } else {
         body.intent = intent;
       }
-      // Use async endpoint — task continues in background if user navigates away
-      const res = await fetch("/api/commands/draft/async", {
+      // Sync endpoint — Vercel serverless can't keep in-memory tasks across
+      // lambda invocations, so we wait for Claude inline within this request.
+      const res = await fetch("/api/commands/draft", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(body),
       });
       const j = await res.json();
-      if (!j.success || !j.data.taskId) {
-        setError(j.message ?? "เกิดข้อผิดพลาดในการเริ่มงาน");
+      if (!j.success) {
+        setError(j.message ?? "ร่างไม่สำเร็จ");
         setLoading(false);
         return;
       }
-
-      const taskId = j.data.taskId;
-
-      // Poll the task until done
-      const poll = async () => {
-        try {
-          const r = await fetch(`/api/tasks/${taskId}`);
-          const t = await r.json();
-          if (!t.success) return;
-          const task = t.data;
-          if (task.status === "DONE") {
-            const data = task.result;
-            onDraftReceived(data.result, {
-              model: data.model,
-              durationMs: data.durationMs,
-              inputTokens: data.tokens.input,
-              outputTokens: data.tokens.output,
-            });
-            setLoading(false);
-            return;
-          }
-          if (task.status === "ERROR") {
-            setError(task.error ?? "ร่างไม่สำเร็จ");
-            setLoading(false);
-            return;
-          }
-          // still running — poll again
-          setTimeout(poll, 2000);
-        } catch (e) {
-          setError((e as Error).message);
-          setLoading(false);
-        }
-      };
-      poll();
+      const data = j.data;
+      onDraftReceived(data.result, {
+        model: data.model,
+        durationMs: data.durationMs,
+        inputTokens: data.tokens.input,
+        outputTokens: data.tokens.output,
+      });
+      setLoading(false);
     } catch (e) {
       setError((e as Error).message);
       setLoading(false);

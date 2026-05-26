@@ -14,7 +14,9 @@ import type { ClassifyResult } from "@/lib/intelligence/classifier";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-export const maxDuration = 300; // up to 5 min for 16 files
+// Vercel Hobby plan caps maxDuration at 60s. With CONCURRENCY=3 + Haiku ~2-3s/file,
+// 30 files ≈ 30s (fits). Larger batches will need to be split client-side.
+export const maxDuration = 60;
 
 interface BatchFileResult {
   filename: string;

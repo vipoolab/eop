@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { useRouter } from "next/navigation";
 import {
   UploadCloud,
   FileText,
@@ -363,7 +362,6 @@ function ResultPanel({
 // ── Batch mode ────────────────────────────────────
 
 function BatchClassify() {
-  const router = useRouter();
   const [files, setFiles] = useState<File[]>([]);
   const [dragging, setDragging] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -408,15 +406,15 @@ function BatchClassify() {
     try {
       const fd = new FormData();
       for (const f of files) fd.append("files", f);
-      // Use async endpoint — runs in background
-      const res = await fetch("/api/intelligence/classify/batch/async", {
+      // Sync endpoint — Vercel serverless requires inline processing
+      const res = await fetch("/api/intelligence/classify/batch", {
         method: "POST",
         body: fd,
       });
       const j = await res.json();
-      if (j.success && j.data.taskId) {
-        // Redirect to task page (poll + result rendering)
-        router.push(`/tasks/${j.data.taskId}`);
+      if (j.success && j.data) {
+        setResult(j.data);
+        setProgress(100);
       } else {
         setError(j.message ?? "ส่งงานไม่สำเร็จ");
       }
