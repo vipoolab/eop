@@ -641,7 +641,7 @@ ${ap || "(ไม่มีข้อมูล)"}
 
   try {
     const response = await client.messages.create({
-      model: MODELS.SONNET, // structured ID-matching — Sonnet is fast + accurate enough
+      model: MODELS.OPUS,
       max_tokens: 1500,
       system: sys,
       messages: [{ role: "user", content: user }],
@@ -659,7 +659,7 @@ ${ap || "(ไม่มีข้อมูล)"}
         actionPlanItemIds: parsed.actionPlanItemIds ?? [],
         explanation: parsed.explanation ?? "",
       },
-      model: MODELS.SONNET,
+      model: MODELS.OPUS,
       durationMs: Date.now() - start,
       inputTokens: response.usage?.input_tokens ?? 0,
       outputTokens: response.usage?.output_tokens ?? 0,
@@ -733,7 +733,7 @@ ${unitsBlock}
 
   try {
     const response = await client.messages.create({
-      model: MODELS.SONNET,
+      model: MODELS.OPUS,
       max_tokens: 3000,
       system: sys,
       messages: [{ role: "user", content: user }],
@@ -761,7 +761,7 @@ ${unitsBlock}
         suggestedCascadeMode: parsed.suggestedCascadeMode === "DIRECT" ? "DIRECT" : "CASCADE",
         suggestedDurationDays: days,
       },
-      model: MODELS.SONNET,
+      model: MODELS.OPUS,
       durationMs: Date.now() - start,
       inputTokens: response.usage?.input_tokens ?? 0,
       outputTokens: response.usage?.output_tokens ?? 0,
