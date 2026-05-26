@@ -70,6 +70,8 @@ export function DraftStep({ fields, intent, draft, onDraftReceived, onChange }: 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [planTitles, setPlanTitles] = useState<Record<string, AlignedItem>>({});
+  // Chunked drafting: which of the 3 steps is currently running (0,1,2) — see run()
+  const [activeStep, setActiveStep] = useState(0);
 
   // Auto-run draft on first entry to this step
   useEffect(() => {
@@ -108,9 +110,14 @@ export function DraftStep({ fields, intent, draft, onDraftReceived, onChange }: 
       .catch(() => {});
   }, []);
 
+  // Chunked drafting — 3 sequential calls, each < 60s (Vercel Hobby cap):
+  //   Step 1 /letter     → letter core (subject/objective/legalBasis/directives/...)
+  //   Step 2 /alignment  → match to 3-level plans
+  //   Step 3 /kpis       → suggested KPIs + target units + duration
   async function run() {
     setLoading(true);
     setError(null);
+    setActiveStep(0);
     try {
       const body: Record<string, string> = {};
       if (fields.keywords || fields.baseInfo || fields.context) {
@@ -120,30 +127,88 @@ export function DraftStep({ fields, intent, draft, onDraftReceived, onChange }: 
       } else {
         body.intent = intent;
       }
-      // Sync endpoint — Vercel serverless can't keep in-memory tasks across
-      // lambda invocations, so we wait for Claude inline within this request.
-      const res = await fetch("/api/commands/draft", {
+
+      // ── Step 1: letter core ──
+      const r1 = await fetch("/api/commands/draft/letter", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(body),
       });
-      const j = await safeJson(res);
-      if (!j.success) {
-        setError(j.message ?? "ร่างไม่สำเร็จ");
+      const j1 = await safeJson(r1);
+      if (!j1.success) {
+        setError(j1.message ?? "ร่างหนังสือไม่สำเร็จ");
         setLoading(false);
         return;
       }
-      const data = j.data as {
-        result: DrafterOutput;
+      const ld = j1.data as {
+        letter: DrafterOutput["letter"];
         model: string;
         durationMs: number;
         tokens: { input: number; output: number };
       };
-      onDraftReceived(data.result, {
-        model: data.model,
-        durationMs: data.durationMs,
-        inputTokens: data.tokens.input,
-        outputTokens: data.tokens.output,
+      const letter = ld.letter;
+      const letterSummary = [
+        `เรื่อง ${letter.subject}`,
+        letter.objective ?? "",
+        ...(letter.directives ?? []),
+      ]
+        .filter(Boolean)
+        .join("\n");
+
+      // ── Step 2: alignment ──
+      setActiveStep(1);
+      const r2 = await fetch("/api/commands/draft/alignment", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ letterSummary }),
+      });
+      const j2 = await safeJson(r2);
+      const alignment = j2.success
+        ? (j2.data as { alignment: DrafterOutput["alignment"] }).alignment
+        : {
+            nationalStrategyItemIds: [],
+            masterPlanItemIds: [],
+            actionPlanItemIds: [],
+            explanation: "",
+          };
+
+      // ── Step 3: KPIs + targets ──
+      setActiveStep(2);
+      const r3 = await fetch("/api/commands/draft/kpis", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ letterSummary, recipient: letter.recipient ?? "" }),
+      });
+      const j3 = await safeJson(r3);
+      const kpiData = j3.success
+        ? (j3.data as {
+            suggestedKpis: DrafterOutput["suggestedKpis"];
+            suggestedTargetUnitIds: string[];
+            suggestedCascadeMode: "DIRECT" | "CASCADE";
+            suggestedDurationDays: number;
+          })
+        : {
+            suggestedKpis: [],
+            suggestedTargetUnitIds: [],
+            suggestedCascadeMode: "CASCADE" as const,
+            suggestedDurationDays: 30,
+          };
+
+      // ── Combine into a single DrafterOutput ──
+      const result: DrafterOutput = {
+        letter,
+        alignment,
+        suggestedKpis: kpiData.suggestedKpis ?? [],
+        suggestedTargetUnitIds: kpiData.suggestedTargetUnitIds,
+        suggestedCascadeMode: kpiData.suggestedCascadeMode,
+        suggestedDurationDays: kpiData.suggestedDurationDays,
+      };
+
+      onDraftReceived(result, {
+        model: ld.model,
+        durationMs: ld.durationMs,
+        inputTokens: ld.tokens.input,
+        outputTokens: ld.tokens.output,
       });
       setLoading(false);
     } catch (e) {
@@ -153,7 +218,7 @@ export function DraftStep({ fields, intent, draft, onDraftReceived, onChange }: 
   }
 
   if (loading) {
-    return <DraftLoadingState />;
+    return <DraftLoadingState activeStep={activeStep} />;
   }
 
   if (error) {
@@ -507,29 +572,19 @@ function stripLead(s: string, lead: string): string {
 
 // ── Loading state ─────────────────────────────────
 
-function DraftLoadingState() {
-  const [phase, setPhase] = useState(0);
+function DraftLoadingState({ activeStep }: { activeStep: number }) {
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
-    const phaseTimer = setInterval(() => {
-      setPhase((p) => Math.min(p + 1, 4));
-    }, 12000);
-    const elapsedTimer = setInterval(() => {
-      setElapsed((e) => e + 1);
-    }, 1000);
-    return () => {
-      clearInterval(phaseTimer);
-      clearInterval(elapsedTimer);
-    };
+    const elapsedTimer = setInterval(() => setElapsed((e) => e + 1), 1000);
+    return () => clearInterval(elapsedTimer);
   }, []);
 
+  // The 3 real chunked steps (each its own < 60s API call)
   const phases = [
-    "อ่าน ๓ ส่วน input (คำสำคัญ + ข้อมูลตั้งต้น + บริบท)",
-    "ค้นหาแผนที่สอดคล้องใน ๓ ระดับ",
-    "ร่าง ๕ องค์ประกอบของหนังสือสั่งการ",
-    "จัดรูปแบบให้ตรงตามระเบียบงานสารบรรณ",
-    "แนะนำ KPI สำหรับติดตามผล",
+    "ขั้น ๑ — ร่างตัวหนังสือคำสั่ง (๕ องค์ประกอบ)",
+    "ขั้น ๒ — จับคู่แผนยุทธศาสตร์ ๓ ระดับ",
+    "ขั้น ๓ — แนะนำ KPI + หน่วยรับคำสั่ง",
   ];
 
   return (
@@ -543,16 +598,16 @@ function DraftLoadingState() {
         <Sparkles className="absolute inset-0 m-auto h-7 w-7 text-[#1e3a5f]" />
       </div>
       <div className="text-base font-semibold text-slate-900 dark:text-slate-100">
-        AI Engine กำลังประมวลผล
+        AI Engine กำลังประมวลผล (ขั้นที่ {toThaiNumeral(activeStep + 1)}/๓)
       </div>
       <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-        ใช้เวลา ~๔๕-๙๐ วินาที สำหรับงานคุณภาพระดับร่างราชการ
+        แบ่งเป็น ๓ ขั้น แต่ละขั้นไม่เกิน ๖๐ วินาที
       </div>
 
       <div className="mt-6 w-full max-w-md space-y-1.5">
         {phases.map((p, idx) => {
-          const done = idx < phase;
-          const active = idx === phase;
+          const done = idx < activeStep;
+          const active = idx === activeStep;
           return (
             <div
               key={idx}

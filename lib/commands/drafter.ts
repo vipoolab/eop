@@ -9,6 +9,9 @@ import type {
   DrafterInput,
   DrafterOutput,
   KpiDefinition,
+  CommandAlignment,
+  CommandLetter,
+  DraftInputFields,
 } from "./types";
 import {
   listDocuments,
@@ -438,5 +441,332 @@ export async function draftCommand(input: DrafterInput): Promise<DraftOutcome> {
       error: (e as Error).message || "เกิดข้อผิดพลาดในการร่าง",
       durationMs: Date.now() - start,
     };
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CHUNKED DRAFTING — 3 separate steps, each < 60s (Vercel Hobby cap)
+//   Step 1: draftLetter            — letter core, no plans/units (light input)
+//   Step 2: matchAlignment         — match letter to 3-level plans
+//   Step 3: suggestKpisAndTargets  — KPIs + target units + duration
+// The client orchestrates them sequentially; each is its own API route.
+// ═══════════════════════════════════════════════════════════════
+
+type StepMeta = { model: string; durationMs: number; inputTokens: number; outputTokens: number };
+
+// ── STEP 1: draftLetter ────────────────────────
+// Only needs user input + signer. NO candidate plans/units → input shrinks
+// from ~25k to ~3k tokens, so this (the heaviest-output step) stays well
+// under 60s.
+
+export interface DraftLetterInput {
+  fields?: DraftInputFields;
+  intent: string;
+  signerName: string;
+  signerTitle: string;
+  signerUnit: string;
+}
+
+export type LetterCore = Pick<
+  CommandLetter,
+  | "subject"
+  | "recipient"
+  | "objective"
+  | "legalBasis"
+  | "directives"
+  | "effectiveClause"
+  | "subjectSuffix"
+  | "isAmendment"
+>;
+
+export type StepOutcome<T> =
+  | ({ ok: true; result: T } & StepMeta)
+  | { ok: false; error: string; durationMs: number };
+
+function buildLetterUserPrompt(input: DraftLetterInput): string {
+  let inputBlock: string;
+  if (input.fields && (input.fields.keywords || input.fields.baseInfo || input.fields.context)) {
+    inputBlock = `## INPUT ของผู้สั่งการ (PoC 3-field format)
+
+### ๑. คำสำคัญ (Keywords)
+${input.fields.keywords || "(ไม่ระบุ)"}
+
+### ๒. ข้อมูลตั้งต้น (Base Info)
+${input.fields.baseInfo || "(ไม่ระบุ)"}
+
+### ๓. บริบทที่เกี่ยวข้อง (Context)
+${input.fields.context || "(ไม่ระบุ)"}`;
+  } else {
+    inputBlock = `## เจตนาของผู้สั่งการ\n"${input.intent}"`;
+  }
+
+  return `${inputBlock}
+
+## ผู้ลงนาม (signer)
+- ชื่อ-นามสกุล: ${input.signerName}
+- ตำแหน่ง: ${input.signerTitle}
+- หน่วย: ${input.signerUnit}
+
+---
+
+หน้าที่: ร่าง "คำสั่ง" จาก INPUT ข้างต้น ตามระเบียบสารบรรณ ข้อ ๑๖ (ยังไม่ต้องจับคู่แผนหรือ KPI — ทำเฉพาะตัวหนังสือ)
+
+ตอบกลับเป็น JSON เท่านั้น ตาม schema:
+
+{
+  "subject": "ชื่อเรื่อง — ไม่ขึ้นต้น 'เรื่อง'",
+  "recipient": "หน่วยรับคำสั่ง (เพื่อ targeting — ไม่ปรากฏในเอกสาร)",
+  "objective": "ความนำ ขึ้นต้น 'ด้วย/ตามที่/โดยที่' ถ้า input อ้างคำสั่งเดิมให้เขียน 'ตามคำสั่ง... นั้น'",
+  "legalBasis": "อาศัยอำนาจตามความในมาตรา ... แห่งพระราชบัญญัติ... <ตำแหน่งผู้สั่ง> จึงสั่งให้ดำเนินการดังต่อไปนี้ (เลือกกฎหมายให้ตรงเนื้อหา)",
+  "directives": ["๑. ให้...", "๒. ให้...", "๓. ให้รายงานผล..."],
+  "effectiveClause": "ทั้งนี้ ตั้งแต่บัดนี้เป็นต้นไป...",
+  "subjectSuffix": "'(เพิ่มเติม)' เฉพาะกรณีแก้ไขคำสั่งเดิม มิฉะนั้นเว้นว่าง",
+  "isAmendment": false
+}
+
+หลักการเลือก legalBasis:
+- ยาเสพติด → "...มาตรา ๑๑ แห่ง พ.ร.บ.ตำรวจฯ ๒๕๖๕ ประกอบประมวลกฎหมายยาเสพติด พ.ศ. ๒๕๖๔"
+- จราจร → "...ประกอบ พ.ร.บ.จราจรทางบก พ.ศ. ๒๕๒๒"
+- สืบสวน/จับกุม → "...ประกอบประมวลกฎหมายวิธีพิจารณาความอาญา"
+- บริหารบุคคล/มอบอำนาจ → "มาตรา ๒๓ (๔) มาตรา ๒๔ และมาตรา ๒๐๔ แห่ง พ.ร.บ.ตำรวจฯ ๒๕๖๕"
+- ทั่วไป → "มาตรา ๑๑ แห่ง พ.ร.บ.ตำรวจฯ ๒๕๖๕"
+
+CHECKLIST: ไม่มี "เรียน"/"ขอแสดงความนับถือ" · directives ขึ้นต้น "ให้" เลขไทย · effectiveClause ขึ้นต้น "ทั้งนี้ ตั้งแต่"`;
+}
+
+const LETTER_FALLBACK: LetterCore = {
+  subject: "(ร่างไม่สำเร็จ)",
+  recipient: "",
+  objective: "",
+  legalBasis: "",
+  directives: [],
+  effectiveClause: "",
+};
+
+export async function draftLetter(input: DraftLetterInput): Promise<StepOutcome<LetterCore>> {
+  const start = Date.now();
+  let client;
+  try {
+    client = getClaude();
+  } catch (e) {
+    return { ok: false, error: (e as Error).message, durationMs: Date.now() - start };
+  }
+  try {
+    const response = await client.messages.create({
+      model: MODELS.OPUS,
+      max_tokens: 4000,
+      system: buildSystemPrompt(),
+      messages: [{ role: "user", content: buildLetterUserPrompt(input) }],
+    });
+    const block = response.content.find((c) => c.type === "text");
+    if (!block || block.type !== "text") {
+      return { ok: false, error: "AI ไม่ได้คืน text", durationMs: Date.now() - start };
+    }
+    const parsed = parseClaudeJson<LetterCore>(block.text, LETTER_FALLBACK);
+    if (!parsed.subject || parsed.subject === LETTER_FALLBACK.subject) {
+      return { ok: false, error: "AI ไม่ได้คืนหนังสือที่ใช้ได้ — ลองอีกครั้ง", durationMs: Date.now() - start };
+    }
+    return {
+      ok: true,
+      result: parsed,
+      model: MODELS.OPUS,
+      durationMs: Date.now() - start,
+      inputTokens: response.usage?.input_tokens ?? 0,
+      outputTokens: response.usage?.output_tokens ?? 0,
+    };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message || "เกิดข้อผิดพลาด", durationMs: Date.now() - start };
+  }
+}
+
+// ── STEP 2: matchAlignment ─────────────────────
+// Input: the drafted letter summary + full candidate plans. Output is tiny
+// (IDs + explanation) so this is fast despite the large plans context.
+
+export interface AlignmentInput {
+  letterSummary: string; // subject + objective + directives joined
+  candidatePlans: DrafterInput["candidatePlans"];
+}
+
+const ALIGNMENT_FALLBACK: CommandAlignment = {
+  nationalStrategyItemIds: [],
+  masterPlanItemIds: [],
+  actionPlanItemIds: [],
+  explanation: "",
+};
+
+export async function matchAlignment(input: AlignmentInput): Promise<StepOutcome<CommandAlignment>> {
+  const start = Date.now();
+  let client;
+  try {
+    client = getClaude();
+  } catch (e) {
+    return { ok: false, error: (e as Error).message, durationMs: Date.now() - start };
+  }
+
+  const ns = input.candidatePlans.nationalStrategy
+    .map((i) => `  [${i.id}] ${i.number} ${i.name}${i.description ? ` — ${i.description.slice(0, 100)}` : ""}`)
+    .join("\n");
+  const mp = input.candidatePlans.masterPlans
+    .map((i) => `  [${i.id}] ${i.number} ${i.name}${i.description ? ` — ${i.description.slice(0, 100)}` : ""}`)
+    .join("\n");
+  const ap = input.candidatePlans.actionPlans
+    .map((i) => `  [${i.id}] ${i.name}${i.description ? ` — ${i.description.slice(0, 100)}` : ""}`)
+    .join("\n");
+
+  const sys = `คุณเป็นผู้เชี่ยวชาญด้านยุทธศาสตร์ตำรวจ จับคู่ "คำสั่ง" กับแผนยุทธศาสตร์ ๓ ระดับ
+หลักการ: ระดับ ๓ (แผนปฏิบัติฯ ตร.) จับคู่ก่อน → ระดับ ๒ สอดคล้องระดับ ๓ → ระดับ ๑ ครอบคลุมระดับ ๒
+ถ้าไม่มีตัวใกล้เคียง คืน array ว่าง — ห้ามฝืนจับคู่`;
+
+  const user = `## คำสั่งที่ต้องจับคู่
+${input.letterSummary}
+
+## แผนระดับ ๑ ยุทธศาสตร์ชาติ
+${ns || "(ไม่มีข้อมูล)"}
+
+## แผนระดับ ๒ แผนแม่บท
+${mp || "(ไม่มีข้อมูล)"}
+
+## แผนระดับ ๓ แผนปฏิบัติราชการ ตร.
+${ap || "(ไม่มีข้อมูล)"}
+
+---
+ตอบกลับ JSON เท่านั้น (ใส่ id ที่อยู่ใน [...] หน้าชื่อ):
+{
+  "actionPlanItemIds": ["<id ระดับ ๓>"],
+  "masterPlanItemIds": ["<id ระดับ ๒>"],
+  "nationalStrategyItemIds": ["<id ระดับ ๑>"],
+  "explanation": "เหตุผลการจับคู่ (๒-๓ ประโยค)"
+}`;
+
+  try {
+    const response = await client.messages.create({
+      model: MODELS.SONNET, // structured ID-matching — Sonnet is fast + accurate enough
+      max_tokens: 1500,
+      system: sys,
+      messages: [{ role: "user", content: user }],
+    });
+    const block = response.content.find((c) => c.type === "text");
+    if (!block || block.type !== "text") {
+      return { ok: false, error: "AI ไม่ได้คืน text", durationMs: Date.now() - start };
+    }
+    const parsed = parseClaudeJson<CommandAlignment>(block.text, ALIGNMENT_FALLBACK);
+    return {
+      ok: true,
+      result: {
+        nationalStrategyItemIds: parsed.nationalStrategyItemIds ?? [],
+        masterPlanItemIds: parsed.masterPlanItemIds ?? [],
+        actionPlanItemIds: parsed.actionPlanItemIds ?? [],
+        explanation: parsed.explanation ?? "",
+      },
+      model: MODELS.SONNET,
+      durationMs: Date.now() - start,
+      inputTokens: response.usage?.input_tokens ?? 0,
+      outputTokens: response.usage?.output_tokens ?? 0,
+    };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message || "เกิดข้อผิดพลาด", durationMs: Date.now() - start };
+  }
+}
+
+// ── STEP 3: suggestKpisAndTargets ──────────────
+
+export interface KpisInput {
+  letterSummary: string;
+  recipient: string;
+  candidateUnits?: DrafterInput["candidateUnits"];
+}
+
+export interface KpisResult {
+  suggestedKpis: KpiDefinition[];
+  suggestedTargetUnitIds: string[];
+  suggestedCascadeMode: "DIRECT" | "CASCADE";
+  suggestedDurationDays: number;
+}
+
+const KPIS_FALLBACK: KpisResult = {
+  suggestedKpis: [],
+  suggestedTargetUnitIds: [],
+  suggestedCascadeMode: "CASCADE",
+  suggestedDurationDays: 30,
+};
+
+export async function suggestKpisAndTargets(input: KpisInput): Promise<StepOutcome<KpisResult>> {
+  const start = Date.now();
+  let client;
+  try {
+    client = getClaude();
+  } catch (e) {
+    return { ok: false, error: (e as Error).message, durationMs: Date.now() - start };
+  }
+
+  const units = (input.candidateUnits ?? []).filter((u) => u.level <= 3);
+  const unitsBlock = units.length === 0
+    ? "(ไม่มีข้อมูล)"
+    : units.map((u) => `  [${u.id}] ${u.shortName ?? u.code} — ${u.name} (level ${u.level})`).join("\n");
+
+  const sys = `คุณเป็นผู้เชี่ยวชาญออกแบบ KPI และเลือกหน่วยรับคำสั่งของตำรวจ
+แนะนำ KPI ที่วัดผลได้ (เชิงปริมาณ + เชิงคุณภาพ) และจับคู่หน่วยรับให้ตรงกับ recipient`;
+
+  const user = `## คำสั่ง
+${input.letterSummary}
+
+## หน่วยรับที่ร่างไว้ (recipient)
+${input.recipient}
+
+## หน่วยงานที่ส่งคำสั่งได้ (candidate units)
+${unitsBlock}
+
+---
+ตอบกลับ JSON เท่านั้น (กระชับ — แนะนำ ๒-๔ KPI, description สั้น ๑ บรรทัด):
+{
+  "suggestedKpis": [
+    {"id":"k1","type":"QUANTITATIVE","metric":"...","unit":"...","targetTotal":100,"reportFrequency":"DAILY","description":"สั้นๆ"},
+    {"id":"k2","type":"QUALITATIVE","metric":"รายงานสรุปผล","reportFrequency":"END_OF_PERIOD","description":"สั้นๆ"}
+  ],
+  "suggestedTargetUnitIds": ["<u-... ที่ตรงกับ recipient>"],
+  "suggestedCascadeMode": "CASCADE | DIRECT",
+  "suggestedDurationDays": 30
+}
+
+หลักการ: แนะนำ ๒-๔ KPI พอ (อย่าเกิน) · description ไม่เกิน ๑ บรรทัด · จับคู่ recipient กับ candidate units · ถ้าครอบหลายหน่วยใช้ CASCADE · duration อ่านจากคำสั่ง`;
+
+  try {
+    const response = await client.messages.create({
+      model: MODELS.SONNET,
+      max_tokens: 3000,
+      system: sys,
+      messages: [{ role: "user", content: user }],
+    });
+    const block = response.content.find((c) => c.type === "text");
+    if (!block || block.type !== "text") {
+      return { ok: false, error: "AI ไม่ได้คืน text", durationMs: Date.now() - start };
+    }
+    const parsed = parseClaudeJson<KpisResult>(block.text, KPIS_FALLBACK);
+    const kpis = (parsed.suggestedKpis ?? []).map((k, idx) => ({
+      ...k,
+      id: k.id ?? `kpi-${Date.now()}-${idx}`,
+    })) as KpiDefinition[];
+    let targetIds = parsed.suggestedTargetUnitIds ?? [];
+    if (input.candidateUnits) {
+      const valid = new Set(input.candidateUnits.map((u) => u.id));
+      targetIds = targetIds.filter((id) => valid.has(id));
+    }
+    const days = Math.min(365, Math.max(1, Math.round(parsed.suggestedDurationDays ?? 30)));
+    return {
+      ok: true,
+      result: {
+        suggestedKpis: kpis,
+        suggestedTargetUnitIds: targetIds,
+        suggestedCascadeMode: parsed.suggestedCascadeMode === "DIRECT" ? "DIRECT" : "CASCADE",
+        suggestedDurationDays: days,
+      },
+      model: MODELS.SONNET,
+      durationMs: Date.now() - start,
+      inputTokens: response.usage?.input_tokens ?? 0,
+      outputTokens: response.usage?.output_tokens ?? 0,
+    };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message || "เกิดข้อผิดพลาด", durationMs: Date.now() - start };
   }
 }
