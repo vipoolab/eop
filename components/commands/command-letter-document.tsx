@@ -41,8 +41,16 @@ interface Props {
   mode?: "draft" | "final";
 }
 
-// Common paragraph style — justified with first-line indent (~ย่อหน้า)
-const P: React.CSSProperties = { textIndent: "2.5em", margin: "0 0 6pt 0", textAlign: "justify" };
+// Common paragraph style — justified with first-line indent (~ย่อหน้า).
+// textJustify "inter-character" distributes spacing across Thai characters (Thai has
+// almost no inter-word spaces), avoiding the huge gaps plain "justify" creates — the
+// CSS analogue of Word's thaiDistribute. Matches real ตร. คำสั่ง.
+const P: React.CSSProperties = {
+  textIndent: "2.5em",
+  margin: "0 0 6pt 0",
+  textAlign: "justify",
+  textJustify: "inter-character",
+};
 
 export function CommandLetterDocument({ letter: L, signedDate, mode = "draft" }: Props) {
   const unitName = L.unitFullName ?? "สำนักงานตำรวจแห่งชาติ";

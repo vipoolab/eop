@@ -50,10 +50,13 @@ function center(text: string, opts: { bold?: boolean; spaceAfter?: number } = {}
     children: [run(text, { bold: opts.bold })],
   });
 }
-// Justified body paragraph with first-line indent (~2.5em ≈ 1.25cm)
+// Thai-distributed justified body paragraph with first-line indent (~2.5em ≈ 1.25cm).
+// THAI_DISTRIBUTE spreads the slack across Thai characters (not just the few ASCII
+// spaces), so lines stay flush on both edges WITHOUT the giant word-gaps that plain
+// JUSTIFIED produces on space-sparse Thai text — matching real ตร. คำสั่ง.
 function body(text: string) {
   return new Paragraph({
-    alignment: AlignmentType.JUSTIFIED,
+    alignment: AlignmentType.THAI_DISTRIBUTE,
     indent: { firstLine: convertMillimetersToTwip(12.5) },
     spacing: { after: 120, line: 276, lineRule: "auto" }, // line 276/240 ≈ 1.15
     children: [run(text)],
