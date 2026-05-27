@@ -12,28 +12,7 @@ import {
 } from "lucide-react";
 import type { WizardState } from "../command-wizard";
 import type { OrgUnit } from "@/lib/police-org/types";
-import { Garuda } from "@/components/garuda";
-
-// Thai-numeral helper (mirrors draft-step)
-const THAI_DIGIT = ["๐", "๑", "๒", "๓", "๔", "๕", "๖", "๗", "๘", "๙"];
-function toThaiNumeral(n: number): string {
-  return String(n)
-    .split("")
-    .map((c) => (c >= "0" && c <= "9" ? THAI_DIGIT[Number(c)] : c))
-    .join("");
-}
-function thaiDate(d: Date, style: "abbreviated" | "full" = "abbreviated"): string {
-  const months = [
-    "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
-    "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม",
-  ];
-  const day = toThaiNumeral(d.getDate());
-  const month = months[d.getMonth()];
-  const year = toThaiNumeral(d.getFullYear() + 543);
-  return style === "full"
-    ? `${day} เดือน ${month} พุทธศักราช ${year}`
-    : `${day} ${month} พ.ศ. ${year}`;
-}
+import { CommandLetterDocument } from "@/components/commands/command-letter-document";
 
 interface Props {
   state: WizardState;
@@ -141,91 +120,13 @@ export function ReviewStep({ state }: Props) {
         </div>
       </div>
 
-      {/* Letter preview — "คำสั่ง" format per ระเบียบสารบรรณ ข้อ ๒๒ */}
-      <section className="bg-slate-100 border border-slate-200 rounded-sm p-6">
+      {/* Letter preview — shared A4 คำสั่ง document */}
+      <section className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-sm p-4">
         <div className="flex items-center gap-2 mb-3 text-xs text-slate-500">
           <FileText className="h-3.5 w-3.5" />
-          ตัวอย่างคำสั่ง — รูปแบบราชการ
+          ตัวอย่างคำสั่ง — หน้ากระดาษ A4 (รูปแบบราชการ)
         </div>
-        <div
-          className="bg-white border border-slate-300 shadow-md max-w-3xl mx-auto font-[var(--font-sarabun)] text-slate-900"
-          style={{ padding: "3rem 2.5rem 2.5rem 3rem", lineHeight: 1.45, fontSize: "15px" }}
-        >
-          {/* Garuda emblem */}
-          <div className="flex flex-col items-center mb-3">
-            <Garuda size={56} className="text-slate-800" />
-          </div>
-
-          {/* Header block — คำสั่ง<หน่วย> + ที่ + เรื่อง */}
-          <div className="text-center space-y-1 mb-2">
-            <div className="text-base font-semibold">
-              คำสั่ง{letter.unitFullName ?? "สำนักงานตำรวจแห่งชาติ"}
-            </div>
-            <div>ที่ {letter.docNumber ?? "...../๒๕๖๙"}</div>
-            <div className="px-6">
-              เรื่อง  {letter.subject.replace(/^\s*เรื่อง\s*/, "")}
-              {letter.subjectSuffix && <span> {letter.subjectSuffix}</span>}
-            </div>
-          </div>
-
-          {/* Divider — style depends on issuing unit */}
-          {letter.dividerStyle === "asterisks" && (
-            <div className="text-center my-2 tracking-widest text-sm">
-              ******************************
-            </div>
-          )}
-          {letter.dividerStyle === "underline" && (
-            <div className="flex justify-center my-2">
-              <div className="border-t border-slate-700 w-2/3" />
-            </div>
-          )}
-          {(!letter.dividerStyle || letter.dividerStyle === "none") && (
-            <div className="my-3" />
-          )}
-
-          {/* Body */}
-          {letter.objective && (
-            <p className="text-justify my-3" style={{ textIndent: "2.5em" }}>
-              {letter.objective}
-            </p>
-          )}
-          {letter.legalBasis && (
-            <p className="text-justify my-3" style={{ textIndent: "2.5em" }}>
-              {letter.legalBasis}
-            </p>
-          )}
-          <div className="my-3 space-y-2">
-            {letter.directives.map((d, idx) => (
-              <p key={idx} className="text-justify" style={{ textIndent: "2.5em" }}>
-                {d}
-              </p>
-            ))}
-          </div>
-          {letter.isAmendment && (
-            <p className="text-justify my-3" style={{ textIndent: "2.5em" }}>
-              นอกนั้นให้เป็นไปตามคำสั่งเดิมทุกประการ
-            </p>
-          )}
-          {letter.effectiveClause && (
-            <p className="text-justify my-3" style={{ textIndent: "2.5em" }}>
-              {letter.effectiveClause}
-            </p>
-          )}
-
-          {/* Signed at + Signature */}
-          <div className="text-center mt-8 mb-2">
-            สั่ง ณ วันที่ {thaiDate(new Date(), letter.dateStyle)}
-          </div>
-          <div className="text-center mt-6 space-y-0.5">
-            <div className="italic text-slate-400 text-sm">(ลายมือชื่อ)</div>
-            {letter.signerRank && <div>{letter.signerRank}</div>}
-            <div>(ชื่อ-นามสกุลผู้สั่งการ)</div>
-            <div>ตำแหน่งผู้สั่งการ</div>
-            <div className="mt-2 text-xs text-slate-500 italic">
-              ลายเซ็นจะปรากฏเมื่ออนุมัติและกดส่ง
-            </div>
-          </div>
-        </div>
+        <CommandLetterDocument letter={letter} mode="draft" />
       </section>
 
       {/* Targets list */}

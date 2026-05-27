@@ -17,7 +17,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
-import { Garuda } from "@/components/garuda";
+import { CommandLetterDocument } from "@/components/commands/command-letter-document";
 import { StatusTimeline } from "@/components/commands/status-timeline";
 import { ActionPanel } from "@/components/commands/action-panel";
 import { UnitProgressTable } from "@/components/commands/unit-progress-table";
@@ -163,120 +163,11 @@ export default async function CommandDetailPage({
             </span>
             <span>ร่างโดย AI Engine</span>
           </div>
-          <div
-            className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 shadow-md font-[var(--font-sarabun)] text-slate-900 dark:text-slate-100"
-            style={{ padding: "3rem 2.5rem 2.5rem 3rem", lineHeight: 1.45, fontSize: "15px" }}
-          >
-            {/* Garuda */}
-            <div className="flex flex-col items-center mb-3">
-              <Garuda size={56} className="text-slate-800 dark:text-slate-200" />
-            </div>
-
-            {/* Header block — คำสั่ง<หน่วย> + ที่ + เรื่อง */}
-            <div className="text-center space-y-1 mb-2">
-              <div className="text-base font-semibold">
-                คำสั่ง{cmd.letter.unitFullName ?? "สำนักงานตำรวจแห่งชาติ"}
-              </div>
-              <div>ที่ {cmd.letter.docNumber ?? "...../๒๕๖๙"}</div>
-              <div className="px-6">
-                เรื่อง  {cmd.letter.subject.replace(/^\s*เรื่อง\s*/, "")}
-                {cmd.letter.subjectSuffix && <span> {cmd.letter.subjectSuffix}</span>}
-              </div>
-            </div>
-
-            {/* Divider — style depends on issuing unit */}
-            {cmd.letter.dividerStyle === "asterisks" && (
-              <div className="text-center my-2 tracking-widest text-sm">
-                ******************************
-              </div>
-            )}
-            {cmd.letter.dividerStyle === "underline" && (
-              <div className="flex justify-center my-2">
-                <div className="border-t border-slate-700 dark:border-slate-300 w-2/3" />
-              </div>
-            )}
-            {(!cmd.letter.dividerStyle || cmd.letter.dividerStyle === "none") && (
-              <div className="my-3" />
-            )}
-
-            {/* Body */}
-            {cmd.letter.objective && (
-              <p className="text-justify my-3" style={{ textIndent: "2.5em" }}>
-                {cmd.letter.objective}
-              </p>
-            )}
-            {cmd.letter.legalBasis && (
-              <p className="text-justify my-3" style={{ textIndent: "2.5em" }}>
-                {cmd.letter.legalBasis}
-              </p>
-            )}
-            {/* Backward-compat: old commands stored body in "introduction" */}
-            {!cmd.letter.objective && !cmd.letter.legalBasis && cmd.letter.introduction && (
-              <p className="text-justify my-3" style={{ textIndent: "2.5em" }}>
-                {cmd.letter.introduction}
-              </p>
-            )}
-            <div className="my-3 space-y-2">
-              {cmd.letter.directives.map((d, idx) => (
-                <p key={idx} className="text-justify" style={{ textIndent: "2.5em" }}>
-                  {d}
-                </p>
-              ))}
-            </div>
-            {/* Amendment closing */}
-            {cmd.letter.isAmendment && (
-              <p className="text-justify my-3" style={{ textIndent: "2.5em" }}>
-                นอกนั้นให้เป็นไปตามคำสั่งเดิมทุกประการ
-              </p>
-            )}
-            {cmd.letter.effectiveClause && (
-              <p className="text-justify my-3" style={{ textIndent: "2.5em" }}>
-                {cmd.letter.effectiveClause}
-              </p>
-            )}
-            {/* Backward-compat: old commands had a separate closing line */}
-            {!cmd.letter.effectiveClause && cmd.letter.closing && (
-              <p className="text-justify my-3" style={{ textIndent: "2.5em" }}>
-                {cmd.letter.closing}
-              </p>
-            )}
-
-            {/* Signed at — centered, style-aware date */}
-            <div className="text-center mt-8 mb-2">
-              สั่ง ณ วันที่ {formatSignedDate(cmd.letter.signedAtDate ?? cmd.createdAt, cmd.letter.dateStyle)}
-            </div>
-
-            {/* Signature — centered with rank line */}
-            <div className="text-center mt-6 space-y-0.5">
-              {cmd.letter.signatureApplied ? (
-                <>
-                  <div className="italic text-lg text-[#1e3a5f] dark:text-blue-400">
-                    ✒ {cmd.letter.signatureText}
-                  </div>
-                  {cmd.letter.signerRank && <div className="mt-1">{cmd.letter.signerRank}</div>}
-                  <div>({cmd.letter.signerName})</div>
-                  <div className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                    {cmd.letter.signerTitle}
-                  </div>
-                  <div className="text-[10px] text-emerald-700 dark:text-emerald-400 mt-1">
-                    ✓ ลงนามอิเล็กทรอนิกส์{" "}
-                    {cmd.letter.signatureAppliedAt &&
-                      new Date(cmd.letter.signatureAppliedAt).toLocaleString("th-TH")}
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="italic text-slate-400 text-sm">(ลายมือชื่อ)</div>
-                  {cmd.letter.signerRank && <div>{cmd.letter.signerRank}</div>}
-                  <div>({cmd.letter.signerName ?? "ชื่อ-นามสกุลผู้สั่งการ"})</div>
-                  <div>{cmd.letter.signerTitle ?? "ตำแหน่งผู้สั่งการ"}</div>
-                  <div className="mt-2 text-xs text-slate-500 italic">
-                    รอผู้บังคับบัญชาลงนาม
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
+          <CommandLetterDocument
+            letter={cmd.letter}
+            signedDate={cmd.letter.signedAtDate ?? cmd.createdAt}
+            mode={cmd.letter.signatureApplied ? "final" : "draft"}
+          />
         </section>
 
         {/* Sidebar */}
@@ -460,28 +351,6 @@ const FREQUENCY_TH: Record<string, string> = {
   MONTHLY: "รายเดือน",
   END_OF_PERIOD: "สิ้นสุดงวด",
 };
-
-// "สั่ง ณ วันที่" date — Thai numerals, two style variants
-const _THAI_DIGIT = ["๐", "๑", "๒", "๓", "๔", "๕", "๖", "๗", "๘", "๙"];
-const _THAI_MONTHS = [
-  "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
-  "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม",
-];
-function _toThai(s: string | number): string {
-  return String(s)
-    .split("")
-    .map((c) => (c >= "0" && c <= "9" ? _THAI_DIGIT[Number(c)] : c))
-    .join("");
-}
-function formatSignedDate(iso: string, style?: "abbreviated" | "full"): string {
-  const d = new Date(iso);
-  const day = _toThai(d.getDate());
-  const month = _THAI_MONTHS[d.getMonth()];
-  const year = _toThai(d.getFullYear() + 543);
-  return style === "full"
-    ? `${day} เดือน ${month} พุทธศักราช ${year}`
-    : `${day} ${month} พ.ศ. ${year}`;
-}
 
 function Metric({
   icon: Icon,

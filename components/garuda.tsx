@@ -14,8 +14,8 @@ interface Props {
 }
 
 export function Garuda({ size = 64, className = "" }: Props) {
-  // Source PNG aspect ratio is ~322:256 = 1.258 : 1 (wider than tall)
-  const width = Math.round(size * (322 / 256));
+  // Source PNG (extracted from คำสั่ง ตร. สภ.บ้านหลวง) is ~396:400 ≈ 1:1.
+  const width = Math.round(size * (396 / 400));
   return (
     <Image
       src="/garuda.png"

@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import type { DrafterOutput } from "@/lib/commands/types";
 import { safeJson } from "@/lib/utils";
-import { Garuda } from "@/components/garuda";
+import { CommandLetterDocument } from "@/components/commands/command-letter-document";
 
 export interface IntentFields {
   keywords: string;
@@ -50,20 +50,13 @@ interface AlignedItem {
   text: string;
 }
 
-// ── Thai-numeral helper ─────────────────────────
+// ── Thai-numeral helper (used by the loading-state step counter) ──
 const THAI_DIGIT = ["๐", "๑", "๒", "๓", "๔", "๕", "๖", "๗", "๘", "๙"];
 function toThaiNumeral(n: number): string {
   return String(n)
     .split("")
     .map((c) => (c >= "0" && c <= "9" ? THAI_DIGIT[Number(c)] : c))
     .join("");
-}
-function thaiDate(d: Date): string {
-  const months = [
-    "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
-    "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม",
-  ];
-  return `${toThaiNumeral(d.getDate())} ${months[d.getMonth()]} พ.ศ. ${toThaiNumeral(d.getFullYear() + 543)}`;
 }
 
 export function DraftStep({ fields, intent, draft, onDraftReceived, onChange }: Props) {
@@ -436,138 +429,25 @@ function PocCard({ num, icon: Icon, accent, label, editable, children }: PocCard
   );
 }
 
-// ── Thai date formatter supporting both คำสั่ง date styles ──
-//   "abbreviated" (ตร.):  "๙ ตุลาคม พ.ศ. ๒๕๖๘"
-//   "full"        (สภ.):  "๙ เดือน ตุลาคม พุทธศักราช ๒๕๖๘"
-function thaiDateStyled(d: Date, style: "abbreviated" | "full" = "abbreviated"): string {
-  const months = [
-    "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
-    "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม",
-  ];
-  const day = toThaiNumeral(d.getDate());
-  const month = months[d.getMonth()];
-  const year = toThaiNumeral(d.getFullYear() + 543);
-  return style === "full"
-    ? `${day} เดือน ${month} พุทธศักราช ${year}`
-    : `${day} ${month} พ.ศ. ${year}`;
-}
-
-// ── Formal Letter Preview — "คำสั่ง" format per ระเบียบสารบรรณ ข้อ ๑๖ ──
-// Matches real RTP samples (ตร. ๔๕๖/๒๕๖๘, ๔๕๗/๒๕๖๘, ๖๐๙/๒๕๖๗, สภ.บ้านหลวง ๓๐๓/๒๕๖๗)
+// ── Formal Letter Preview — wraps the shared A4 คำสั่ง document ──
 
 function FormalLetterPreview({ draft }: { draft: DrafterOutput }) {
-  const L = draft.letter;
-  const dateStyle = L.dateStyle ?? "abbreviated";
-  const dividerStyle = L.dividerStyle ?? "none";
-  const today = thaiDateStyled(new Date(), dateStyle);
-  const docNumber = L.docNumber ?? "...../๒๕๖๙";
-  const unitName = L.unitFullName ?? "สำนักงานตำรวจแห่งชาติ";
-  const subjectText = stripLead(L.subject, "เรื่อง");
-
   return (
     <section className="border border-slate-300 dark:border-slate-700 rounded-sm bg-white dark:bg-slate-950 overflow-hidden shadow-sm">
       <div className="border-b border-slate-200 dark:border-slate-700 px-4 py-2.5 flex items-center justify-between bg-slate-50 dark:bg-slate-900">
         <div className="flex items-center gap-2">
           <FileText className="h-4 w-4 text-[#1e3a5f] dark:text-amber-400" />
           <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-            ตัวอย่างคำสั่ง (Preview)
+            ตัวอย่างคำสั่ง (Preview) — หน้ากระดาษ A4
           </span>
         </div>
         <span className="text-[10px] text-slate-500 dark:text-slate-400">
-          ตามระเบียบสารบรรณ ข้อ ๑๖ — ฟอนต์ Sarabun (เทียบเท่า TH SarabunPSK)
+          ตามระเบียบสารบรรณ ข้อ ๑๖ — TH SarabunPSK ๑๖ pt
         </span>
       </div>
-
-      {/* Paper — standard government margins ≈ 3/2/3/2 cm */}
-      <div
-        className="bg-white dark:bg-slate-950 font-[var(--font-sarabun)] text-slate-900 dark:text-slate-100"
-        style={{ padding: "3rem 2.5rem 2.5rem 3rem", lineHeight: 1.45, fontSize: "15px" }}
-      >
-        {/* ── Garuda emblem — centered ── */}
-        <div className="flex flex-col items-center mb-3">
-          <Garuda size={56} />
-        </div>
-
-        {/* ── Header block: คำสั่ง<หน่วย> + ที่ + เรื่อง — center-aligned ── */}
-        <div className="text-center space-y-1 mb-2">
-          <div className="text-base font-semibold">คำสั่ง{unitName}</div>
-          <div>ที่ {docNumber}</div>
-          <div className="px-6">
-            <span>เรื่อง  </span>
-            <span>{subjectText}</span>
-            {L.subjectSuffix && <span> {L.subjectSuffix}</span>}
-          </div>
-        </div>
-
-        {/* ── Divider — style depends on issuing unit ── */}
-        {dividerStyle === "asterisks" && (
-          <div className="text-center my-2 tracking-widest text-sm">
-            ******************************
-          </div>
-        )}
-        {dividerStyle === "underline" && (
-          <div className="flex justify-center my-2">
-            <div className="border-t border-slate-700 dark:border-slate-300 w-2/3" />
-          </div>
-        )}
-        {dividerStyle === "none" && <div className="my-3" />}
-
-        {/* ── Objective (ความนำ — รวมการอ้างถึงคำสั่งเดิมในตัว) ── */}
-        {L.objective && (
-          <p className="text-justify my-3" style={{ textIndent: "2.5em" }}>
-            {L.objective}
-          </p>
-        )}
-
-        {/* ── Legal basis (อาศัยอำนาจตาม...) ── */}
-        {L.legalBasis && (
-          <p className="text-justify my-3" style={{ textIndent: "2.5em" }}>
-            {L.legalBasis}
-          </p>
-        )}
-
-        {/* ── Directives — numbered (numbers already in text) ── */}
-        <div className="my-3 space-y-2">
-          {L.directives.map((d, idx) => (
-            <p key={idx} className="text-justify" style={{ textIndent: "2.5em" }}>
-              {d}
-            </p>
-          ))}
-        </div>
-
-        {/* ── Amendment closing — "นอกนั้นให้เป็นไปตามคำสั่งเดิม" ── */}
-        {L.isAmendment && (
-          <p className="text-justify my-3" style={{ textIndent: "2.5em" }}>
-            นอกนั้นให้เป็นไปตามคำสั่งเดิมทุกประการ
-          </p>
-        )}
-
-        {/* ── Effective clause ── */}
-        {L.effectiveClause && (
-          <p className="text-justify my-3" style={{ textIndent: "2.5em" }}>
-            {L.effectiveClause}
-          </p>
-        )}
-
-        {/* ── Signed-at date — centered ── */}
-        <div className="text-center mt-8 mb-2">
-          <span>สั่ง ณ วันที่ {today}</span>
-        </div>
-
-        {/* ── Signature block — centered, with rank line ── */}
-        <div className="text-center mt-6 space-y-0.5">
-          <div className="italic text-slate-400 text-sm">(ลายมือชื่อ)</div>
-          {L.signerRank && <div>{L.signerRank}</div>}
-          <div>({L.signerName ?? "ชื่อ-นามสกุลผู้สั่งการ"})</div>
-          <div>{L.signerTitle ?? "ตำแหน่งผู้สั่งการ"}</div>
-        </div>
-      </div>
+      <CommandLetterDocument letter={draft.letter} mode="draft" />
     </section>
   );
-}
-
-function stripLead(s: string, lead: string): string {
-  return s.replace(new RegExp(`^\\s*${lead}\\s*`), "");
 }
 
 // ── Loading state ─────────────────────────────────
