@@ -4,7 +4,7 @@
 //   • เว้นใต้ครุฑ ~5mm ก่อนหัวเรื่อง
 //   • หัว: คำสั่ง<หน่วย> / ที่ X/Y / เรื่อง ... (กึ่งกลาง)
 //   • เนื้อหา justified, ย่อหน้าแรกเยื้อง, line-height ~1.35
-//   • TH SarabunPSK 16pt (ใช้ฟอนต์ Sarabun เทียบเท่า)
+//   • TH SarabunPSK 16pt — ฟอนต์ราชการของจริง (self-hosted, SIPA)
 //
 // Used by: draft-step preview, review-step preview, and command detail page,
 // so the format stays identical everywhere.

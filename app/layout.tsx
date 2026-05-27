@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import { Noto_Sans_Thai, Sarabun } from "next/font/google";
+import { Noto_Sans_Thai } from "next/font/google";
+import localFont from "next/font/local";
 import { ThemeProvider, THEME_INIT_SCRIPT } from "@/components/theme-provider";
 import "./globals.css";
 
@@ -9,13 +10,17 @@ const notoThai = Noto_Sans_Thai({
   weight: ["300", "400", "500", "600", "700"],
 });
 
-// Sarabun — closest Google Fonts equivalent to TH Sarabun PSK
-// (the official font per ระเบียบสารบรรณ ที่ นร ๐๑๐๖/ว ๒๐๑๗ ลว. ๑๒ ม.ค. ๖๔)
-// Used for formal government letter rendering (preview + print).
-const sarabun = Sarabun({
+// TH SarabunPSK — the official Thai government document font (1 of the 13
+// national fonts by SIPA), mandated for หนังสือราชการ per คำสั่ง นร ๐๑๐๖/ว
+// ๒๐๑๗ ลว. ๑๒ ม.ค. ๒๕๖๔. Self-hosted (.ttf) so the คำสั่ง renders in the
+// exact official typeface, not a Google look-alike.
+const sarabun = localFont({
   variable: "--font-sarabun",
-  subsets: ["thai", "latin"],
-  weight: ["400", "500", "600", "700"],
+  src: [
+    { path: "../public/fonts/THSarabunNew.ttf", weight: "400", style: "normal" },
+    { path: "../public/fonts/THSarabunNew-Bold.ttf", weight: "700", style: "normal" },
+  ],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
