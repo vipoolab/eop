@@ -65,7 +65,9 @@ export function CommandLetterDocument({ letter: L, signedDate, mode = "draft" }:
           paddingRight: "20mm",
           paddingBottom: "20mm",
           fontSize: "16pt",
-          lineHeight: 1.35,
+          // line-height 1.15 ⇒ pitch ≈ 6.5mm, matching the measured ~6.47mm
+          // of the real สภ.บ้านหลวง order (16pt single-ish spacing).
+          lineHeight: 1.15,
         }}
       >
         {/* ── ตราครุฑ สูง ๓ ซม. (≈113px @96dpi) — กึ่งกลาง ── */}
@@ -74,7 +76,7 @@ export function CommandLetterDocument({ letter: L, signedDate, mode = "draft" }:
         </div>
 
         {/* ── หัวเรื่อง — กึ่งกลาง ── */}
-        <div className="text-center" style={{ lineHeight: 1.3 }}>
+        <div className="text-center" style={{ lineHeight: 1.25 }}>
           <div style={{ fontWeight: 600 }}>คำสั่ง{unitName}</div>
           <div>ที่ {docNumber}</div>
           <div style={{ padding: "0 8mm" }}>
