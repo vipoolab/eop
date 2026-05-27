@@ -8,6 +8,7 @@
     "app/api/commands/draft/letter/route.ts": { "maxDuration": 60 },
     "app/api/commands/draft/alignment/route.ts": { "maxDuration": 60 },
     "app/api/commands/draft/kpis/route.ts": { "maxDuration": 60 },
+    "app/api/commands/docx/route.ts": { "maxDuration": 30 },
     "app/api/intelligence/classify/route.ts": { "maxDuration": 60 },
     "app/api/intelligence/classify/batch/route.ts": { "maxDuration": 60 },
     "app/api/intelligence/ocr/route.ts": { "maxDuration": 60 },

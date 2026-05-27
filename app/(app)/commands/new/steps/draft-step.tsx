@@ -21,6 +21,7 @@ import {
 import type { DrafterOutput } from "@/lib/commands/types";
 import { safeJson } from "@/lib/utils";
 import { CommandLetterDocument } from "@/components/commands/command-letter-document";
+import { DownloadDocxButton } from "@/components/commands/download-docx-button";
 
 export interface IntentFields {
   keywords: string;
@@ -434,16 +435,14 @@ function PocCard({ num, icon: Icon, accent, label, editable, children }: PocCard
 function FormalLetterPreview({ draft }: { draft: DrafterOutput }) {
   return (
     <section className="border border-slate-300 dark:border-slate-700 rounded-sm bg-white dark:bg-slate-950 overflow-hidden shadow-sm">
-      <div className="border-b border-slate-200 dark:border-slate-700 px-4 py-2.5 flex items-center justify-between bg-slate-50 dark:bg-slate-900">
-        <div className="flex items-center gap-2">
-          <FileText className="h-4 w-4 text-[#1e3a5f] dark:text-amber-400" />
-          <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+      <div className="border-b border-slate-200 dark:border-slate-700 px-4 py-2.5 flex items-center justify-between gap-3 bg-slate-50 dark:bg-slate-900">
+        <div className="flex items-center gap-2 min-w-0">
+          <FileText className="h-4 w-4 text-[#1e3a5f] dark:text-amber-400 shrink-0" />
+          <span className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">
             ตัวอย่างคำสั่ง (Preview) — หน้ากระดาษ A4
           </span>
         </div>
-        <span className="text-[10px] text-slate-500 dark:text-slate-400">
-          ตามระเบียบสารบรรณ ข้อ ๑๖ — TH SarabunPSK ๑๖ pt
-        </span>
+        <DownloadDocxButton letter={draft.letter} />
       </div>
       <CommandLetterDocument letter={draft.letter} mode="draft" />
     </section>

@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { CommandLetterDocument } from "@/components/commands/command-letter-document";
+import { DownloadDocxButton } from "@/components/commands/download-docx-button";
 import { StatusTimeline } from "@/components/commands/status-timeline";
 import { ActionPanel } from "@/components/commands/action-panel";
 import { UnitProgressTable } from "@/components/commands/unit-progress-table";
@@ -156,12 +157,15 @@ export default async function CommandDetailPage({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Letter */}
         <section className="lg:col-span-2 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-sm p-5">
-          <div className="flex items-center justify-between mb-3 text-xs text-slate-500 dark:text-slate-400">
+          <div className="flex items-center justify-between gap-3 mb-3 text-xs text-slate-500 dark:text-slate-400">
             <span className="flex items-center gap-1.5">
               <FileText className="h-3.5 w-3.5" />
               หนังสือสั่งการ
             </span>
-            <span>ร่างโดย AI Engine</span>
+            <DownloadDocxButton
+              letter={cmd.letter}
+              signedDate={cmd.letter.signedAtDate ?? cmd.createdAt}
+            />
           </div>
           <CommandLetterDocument
             letter={cmd.letter}
