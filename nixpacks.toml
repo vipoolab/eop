@@ -1,0 +1,14 @@
+# Railway / Nixpacks build config
+#
+# Why this file exists:
+# Nixpacks' default install step for a Node project with a package-lock.json is
+# `npm ci`, which requires the lockfile to be perfectly in sync for the build
+# platform (Linux). Our package-lock.json is generated on Windows and npm omits
+# a couple of Linux-only optional transitive deps of `sharp`
+# (@emnapi/runtime, @emnapi/core), so `npm ci` fails on Railway with exit 1.
+#
+# `npm install` tolerates an out-of-sync lockfile and resolves the correct
+# platform deps at build time, so we use it instead. Node version is pinned via
+# .nvmrc (22) in the setup phase.
+[phases.install]
+cmds = ["npm install --no-audit --no-fund"]
