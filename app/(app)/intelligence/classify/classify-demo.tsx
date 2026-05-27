@@ -19,7 +19,7 @@ import {
   DOC_CATEGORIES,
   type DocCategory,
 } from "@/lib/intelligence/types";
-import { MAX_UPLOAD_BYTES, formatBytes, safeJson } from "@/lib/utils";
+import { MAX_UPLOAD_BYTES, MAX_BATCH_BYTES, formatBytes, safeJson } from "@/lib/utils";
 
 interface RecentItem {
   id: string;
@@ -396,9 +396,9 @@ function BatchClassify() {
       return;
     }
     const totalSize = files.reduce((sum, f) => sum + f.size, 0);
-    if (totalSize > MAX_UPLOAD_BYTES) {
+    if (totalSize > MAX_BATCH_BYTES) {
       setError(
-        `ขนาดรวมของไฟล์ทั้งหมด ${formatBytes(totalSize)} เกินที่ระบบรองรับ (สูงสุด ${formatBytes(MAX_UPLOAD_BYTES)} ต่อครั้ง) — กรุณาแยกส่งทีละน้อย`
+        `ขนาดรวมของไฟล์ทั้งหมด ${formatBytes(totalSize)} เกินที่ระบบรองรับ (สูงสุด ${formatBytes(MAX_BATCH_BYTES)} ต่อครั้ง) — กรุณาแยกส่งทีละน้อย`
       );
       return;
     }
@@ -458,8 +458,8 @@ function BatchClassify() {
           ลากไฟล์มาวางที่นี่ หรือคลิกเพื่อเลือก
         </div>
         <div className="text-xs text-slate-500 mb-3">
-          รองรับ <strong>.pdf, .docx, .txt, .md</strong> — สูงสุด ๓๐ ไฟล์ต่อครั้ง · ขนาดรวมไม่เกิน{" "}
-          {formatBytes(MAX_UPLOAD_BYTES)}
+          รองรับ <strong>.pdf, .docx, .txt, .md</strong> — สูงสุด ๓๐ ไฟล์ต่อครั้ง · ไฟล์ละไม่เกิน{" "}
+          {formatBytes(MAX_UPLOAD_BYTES)} · รวมไม่เกิน {formatBytes(MAX_BATCH_BYTES)}
           <br />
           <span className="text-[10px]">PDF แบบ scan ระบบจะใช้ AI Vision อ่านโดยตรง</span>
         </div>

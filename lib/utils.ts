@@ -19,10 +19,17 @@ export function formatThaiDate(date: Date | string): string {
 }
 
 // ─────────────────────────────────────────────
-// Upload limits (Vercel Hobby plan caps request body at 4.5 MB)
+// Upload limits
+// On Railway (current host) there's no small request-body cap like Vercel
+// Hobby's 4.5 MB. The real ceiling is the Anthropic API: PDFs up to 32 MB,
+// images up to ~5 MB. base64 inflates ~33%, so we cap a single file at
+// 20 MB (→ ~27 MB encoded, safely under 32 MB).
 // ─────────────────────────────────────────────
 
-export const MAX_UPLOAD_BYTES = 4 * 1024 * 1024; // 4 MB — leave 0.5 MB headroom
+/** Max size per single uploaded file (classify single / OCR / each batch file) */
+export const MAX_UPLOAD_BYTES = 20 * 1024 * 1024; // 20 MB
+/** Max combined size for a batch upload (multiple files in one request) */
+export const MAX_BATCH_BYTES = 50 * 1024 * 1024; // 50 MB total
 
 export function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
