@@ -83,8 +83,13 @@ export function DocxBlobPreview({ letter, signedDate }: Props) {
       )}
       <div
         ref={containerRef}
+        lang="th"
         className="overflow-x-auto flex justify-center"
-        // docx-preview emits page-sized HTML; let it size itself.
+        // lang="th" tells the browser to use Thai dictionary line-breaking
+        // inside docx-preview's output (Thai has almost no word spaces, so
+        // without this the browser only breaks at ASCII spaces — leaving
+        // short lines like "๑. ให้ตำรวจภูธรภาค ๙ เป็นหน่วยรับผิดชอบหลัก"
+        // when the next Thai phrase is too long to fit).
       />
     </div>
   );

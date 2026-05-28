@@ -38,9 +38,13 @@ function fmtSignedDate(iso: string, style: "abbreviated" | "full"): string {
     : `${day} ${month} พ.ศ. ${year}`;
 }
 
-// One run with the standard font/size
+// One run with the standard font/size. Marking the run as Thai (w:lang w:val
+// + w:bidi) lets word processors AND docx-preview's HTML output trigger
+// Thai dictionary line-breaking — without it, browsers only break at ASCII
+// spaces (and Thai has almost none), leaving prematurely-short lines.
+const THAI_LANG = { value: "th-TH", bidirectional: "th-TH" } as const;
 function run(text: string, opts: { bold?: boolean } = {}) {
-  return new TextRun({ text, font: FONT, size: SIZE, bold: opts.bold });
+  return new TextRun({ text, font: FONT, size: SIZE, bold: opts.bold, language: THAI_LANG });
 }
 // Centered single-line paragraph
 function center(text: string, opts: { bold?: boolean; spaceAfter?: number } = {}) {
