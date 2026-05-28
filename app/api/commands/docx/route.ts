@@ -5,7 +5,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { buildCommandDocx } from "@/lib/commands/docx-builder";
 import { getActivePersona, getUnit } from "@/lib/police-org/store";
-import { expandRank, expandTitle, stripRankFromName } from "@/lib/commands/signer-format";
 import type { CommandLetter } from "@/lib/commands/types";
 
 export const runtime = "nodejs";
@@ -21,26 +20,22 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Enrich with persona-derived header + signature fields (mirrors the commit
-  // route at app/api/commands/route.ts so the downloaded docx already shows
-  // the real signer instead of "(ลายมือชื่อ) / (ชื่อ-นามสกุลผู้สั่งการ)" placeholders).
+  // Enrich with persona-derived HEADER metadata only (unit name, date/divider
+  // style). The signature block intentionally stays blank ("(ลายมือชื่อ)" +
+  // dotted lines) because the actual signer is unknown at draft/download time
+  // — that's the responsibility of whoever later signs the printed copy.
   try {
     const persona = getActivePersona();
     if (persona) {
       const unit = getUnit(persona.unitId);
       letter.unitFullName = letter.unitFullName ?? unit?.name ?? "สำนักงานตำรวจแห่งชาติ";
-      // Use FULL rank/title and strip rank prefix off the name — matches ตร. ๔๑๙
-      // ("พลตำรวจเอก" / "(อดุลย์ แสงสิงแก้ว)" / "ผู้บัญชาการตำรวจแห่งชาติ").
-      letter.signerRank = letter.signerRank ?? expandRank(persona.rank);
-      letter.signerName = letter.signerName ?? stripRankFromName(persona.name);
-      letter.signerTitle = letter.signerTitle ?? expandTitle(persona.role);
       const isStation = (unit?.level ?? 0) >= 3;
       letter.dateStyle = letter.dateStyle ?? (isStation ? "full" : "abbreviated");
       // HQ default = underline (ตร. ๔๑๙); station = asterisks
       letter.dividerStyle = letter.dividerStyle ?? (isStation ? "asterisks" : "underline");
     }
   } catch {
-    // persona store failed — render the letter as-is with placeholders
+    // persona store failed — render the letter as-is
   }
 
   const buffer = await buildCommandDocx(letter, body?.signedDate);

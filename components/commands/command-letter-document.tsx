@@ -167,7 +167,9 @@ export function CommandLetterDocument({ letter: L, signedDate, mode = "draft" }:
           สั่ง ณ วันที่ {dateStr}
         </div>
 
-        {/* ── ลายมือชื่อ — กึ่งกลาง ── */}
+        {/* ── บล็อกลงนาม — กึ่งกลาง (preview ต้องตรงกับ docx export เป๊ะ) ──
+            • signed → ลายเซ็น + ยศ + (ชื่อ) + ตำแหน่ง
+            • draft  → (ลายมือชื่อ) + ๓ บรรทัดจุดเว้นไว้ให้คนเซ็น */}
         <div className="text-center" style={{ marginTop: "8mm", lineHeight: 1.4 }}>
           {mode === "final" && L.signatureApplied ? (
             <>
@@ -175,17 +177,15 @@ export function CommandLetterDocument({ letter: L, signedDate, mode = "draft" }:
                 ✒ {L.signatureText}
               </div>
               {L.signerRank && <div>{L.signerRank}</div>}
-              <div>({L.signerName})</div>
-              <div style={{ fontSize: "14pt" }}>{L.signerTitle}</div>
+              {L.signerName && <div>({L.signerName})</div>}
+              {L.signerTitle && <div style={{ fontSize: "14pt" }}>{L.signerTitle}</div>}
             </>
           ) : (
             <>
-              <div style={{ color: "#94a3b8", fontStyle: "italic", fontSize: "14pt" }}>
-                (ลายมือชื่อ)
-              </div>
-              {L.signerRank && <div>{L.signerRank}</div>}
-              <div>({L.signerName ?? "ชื่อ-นามสกุลผู้สั่งการ"})</div>
-              <div>{L.signerTitle ?? "ตำแหน่งผู้สั่งการ"}</div>
+              <div>(ลายมือชื่อ)</div>
+              <div>{".".repeat(40)}</div>
+              <div>{".".repeat(40)}</div>
+              <div>{".".repeat(40)}</div>
             </>
           )}
         </div>

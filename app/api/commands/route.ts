@@ -109,8 +109,11 @@ export async function POST(req: NextRequest) {
   // ── Populate v3 header/signature fields from persona (for คำสั่ง format) ──
   // Header unit name — full name of the issuing unit (or ตร. as fallback)
   letter.unitFullName = letter.unitFullName ?? userUnit?.name ?? "สำนักงานตำรวจแห่งชาติ";
-  // Signer rank line (above the parenthetical name) — full form, no abbreviation
-  letter.signerRank = letter.signerRank ?? expandRank(persona.rank);
+  // Note: signer block (rank/name/title) is intentionally NOT set for
+  // DRAFT/SUBMITTED — those should print with a blank dotted signature
+  // template since the eventual signer is unknown. The dispatch branch
+  // below fills the signer when a digital signature is actually applied.
+  //
   // Date/divider style: HQ-level units (bureau or ตร.) use abbreviated date + no
   // divider; station-level (level 3) uses the full date words + asterisk divider.
   const isStationLevel = (userUnit?.level ?? 0) >= 3;
@@ -130,6 +133,7 @@ export async function POST(req: NextRequest) {
       letter.signatureApplied = true;
       letter.signatureText = persona.digitalSignature;
       letter.signatureAppliedAt = now;
+      letter.signerRank = expandRank(persona.rank);
       letter.signerName = stripRankFromName(persona.name);
       letter.signerTitle = expandTitle(persona.role);
       letter.signerDate = now;

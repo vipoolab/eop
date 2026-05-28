@@ -143,15 +143,24 @@ export async function buildCommandDocx(
     })
   );
 
-  // ── ลายมือชื่อ (centered) ──
+  // ── บล็อกลงนาม (centered) ──
+  // Two modes:
+  //   (a) Signed/dispatched — show signature text + actual rank/name/title.
+  //   (b) Draft (default) — show a blank fill-in template so whoever later
+  //       prints the order can sign by hand. We don't know the signer at draft
+  //       time, so populating it would be misleading.
   if (letter.signatureApplied && letter.signatureText) {
     children.push(center(`(ลงนาม) ${letter.signatureText}`));
+    if (letter.signerRank) children.push(center(letter.signerRank));
+    if (letter.signerName) children.push(center(`(${letter.signerName})`));
+    if (letter.signerTitle) children.push(center(letter.signerTitle));
   } else {
+    const dots = ".".repeat(40);
     children.push(center("(ลายมือชื่อ)"));
+    children.push(center(dots));
+    children.push(center(dots));
+    children.push(center(dots));
   }
-  if (letter.signerRank) children.push(center(letter.signerRank));
-  children.push(center(`(${letter.signerName ?? "ชื่อ-นามสกุลผู้สั่งการ"})`));
-  children.push(center(letter.signerTitle ?? "ตำแหน่งผู้สั่งการ"));
 
   const doc = new Document({
     styles: {
