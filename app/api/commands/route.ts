@@ -14,6 +14,7 @@ import {
   createNotificationsForDispatch,
 } from "@/lib/commands/emergency";
 import { getDescendants, getUnit, getActivePersona } from "@/lib/police-org/store";
+import { expandRank, expandTitle, stripRankFromName } from "@/lib/commands/signer-format";
 import type {
   Command,
   CommandLetter,
@@ -108,13 +109,15 @@ export async function POST(req: NextRequest) {
   // ── Populate v3 header/signature fields from persona (for คำสั่ง format) ──
   // Header unit name — full name of the issuing unit (or ตร. as fallback)
   letter.unitFullName = letter.unitFullName ?? userUnit?.name ?? "สำนักงานตำรวจแห่งชาติ";
-  // Signer rank line (above the parenthetical name)
-  letter.signerRank = letter.signerRank ?? persona.rank;
+  // Signer rank line (above the parenthetical name) — full form, no abbreviation
+  letter.signerRank = letter.signerRank ?? expandRank(persona.rank);
   // Date/divider style: HQ-level units (bureau or ตร.) use abbreviated date + no
   // divider; station-level (level 3) uses the full date words + asterisk divider.
   const isStationLevel = (userUnit?.level ?? 0) >= 3;
   letter.dateStyle = letter.dateStyle ?? (isStationLevel ? "full" : "abbreviated");
-  letter.dividerStyle = letter.dividerStyle ?? (isStationLevel ? "asterisks" : "none");
+  // HQ-level (ตร./บช.) uses a short underline like ตร. ๔๑๙/๒๕๕๖;
+  // station-level uses asterisks like สภ. samples.
+  letter.dividerStyle = letter.dividerStyle ?? (isStationLevel ? "asterisks" : "underline");
 
   if (action === "draft") {
     status = "DRAFT";
@@ -127,8 +130,8 @@ export async function POST(req: NextRequest) {
       letter.signatureApplied = true;
       letter.signatureText = persona.digitalSignature;
       letter.signatureAppliedAt = now;
-      letter.signerName = persona.name;
-      letter.signerTitle = persona.role;
+      letter.signerName = stripRankFromName(persona.name);
+      letter.signerTitle = expandTitle(persona.role);
       letter.signerDate = now;
     }
   }

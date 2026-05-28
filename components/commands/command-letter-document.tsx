@@ -52,12 +52,22 @@ const P: React.CSSProperties = {
   textJustify: "inter-character",
 };
 
+// Split a body text on blank lines so the AI's "background\n\npurpose" becomes
+// TWO properly-indented paragraphs (matches real ตร. คำสั่ง which separates
+// เหตุผล from วัตถุประสงค์).
+function splitParas(text: string): string[] {
+  return text
+    .split(/\n\s*\n/)
+    .map((t) => t.trim())
+    .filter(Boolean);
+}
+
 export function CommandLetterDocument({ letter: L, signedDate, mode = "draft" }: Props) {
   const unitName = L.unitFullName ?? "สำนักงานตำรวจแห่งชาติ";
   const docNumber = L.docNumber ?? "...../๒๕๖๙";
   const subject = (L.subject ?? "").replace(/^\s*เรื่อง\s*/, "");
   const dateStyle = L.dateStyle ?? "abbreviated";
-  const divider = L.dividerStyle ?? "none";
+  const divider = L.dividerStyle ?? "underline";
   const dateStr = fmtSignedDate(signedDate ?? new Date().toISOString(), dateStyle);
 
   return (
@@ -106,21 +116,51 @@ export function CommandLetterDocument({ letter: L, signedDate, mode = "draft" }:
         )}
         {divider === "none" && <div style={{ height: "5mm" }} />}
 
-        {/* ── เนื้อหา ── */}
-        {L.objective && <p style={P}>{L.objective}</p>}
-        {L.legalBasis && <p style={P}>{L.legalBasis}</p>}
+        {/* ── เนื้อหา (ทุก block แยก paragraph ตาม \n\n) ── */}
+        {L.objective &&
+          splitParas(L.objective).map((p, i) => (
+            <p key={`obj${i}`} style={P}>
+              {p}
+            </p>
+          ))}
+        {L.legalBasis &&
+          splitParas(L.legalBasis).map((p, i) => (
+            <p key={`leg${i}`} style={P}>
+              {p}
+            </p>
+          ))}
         {/* Backward-compat: legacy single-block body */}
-        {!L.objective && !L.legalBasis && L.introduction && <p style={P}>{L.introduction}</p>}
+        {!L.objective &&
+          !L.legalBasis &&
+          L.introduction &&
+          splitParas(L.introduction).map((p, i) => (
+            <p key={`intro${i}`} style={P}>
+              {p}
+            </p>
+          ))}
 
-        {(L.directives ?? []).map((d, i) => (
-          <p key={i} style={P}>
-            {d}
-          </p>
-        ))}
+        {(L.directives ?? []).flatMap((d, i) =>
+          splitParas(d).map((p, j) => (
+            <p key={`dir${i}-${j}`} style={P}>
+              {p}
+            </p>
+          ))
+        )}
 
         {L.isAmendment && <p style={P}>นอกนั้นให้เป็นไปตามคำสั่งเดิมทุกประการ</p>}
-        {L.effectiveClause && <p style={P}>{L.effectiveClause}</p>}
-        {!L.effectiveClause && L.closing && <p style={P}>{L.closing}</p>}
+        {L.effectiveClause &&
+          splitParas(L.effectiveClause).map((p, i) => (
+            <p key={`eff${i}`} style={P}>
+              {p}
+            </p>
+          ))}
+        {!L.effectiveClause &&
+          L.closing &&
+          splitParas(L.closing).map((p, i) => (
+            <p key={`cls${i}`} style={P}>
+              {p}
+            </p>
+          ))}
 
         {/* ── สั่ง ณ วันที่ — กึ่งกลาง ── */}
         <div className="text-center" style={{ marginTop: "10mm" }}>

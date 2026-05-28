@@ -50,17 +50,28 @@ function center(text: string, opts: { bold?: boolean; spaceAfter?: number } = {}
     children: [run(text, { bold: opts.bold })],
   });
 }
-// Thai-distributed justified body paragraph with first-line indent (~2.5em ≈ 1.25cm).
+// Thai-distributed justified body paragraph(s) with first-line indent (~2.5em ≈ 1.25cm).
 // THAI_DISTRIBUTE spreads the slack across Thai characters (not just the few ASCII
 // spaces), so lines stay flush on both edges WITHOUT the giant word-gaps that plain
 // JUSTIFIED produces on space-sparse Thai text — matching real ตร. คำสั่ง.
-function body(text: string) {
+//
+// `bodyParas` splits the input on blank lines so the AI's "background ... \n\n purpose"
+// becomes TWO properly-indented paragraphs (real ตร. คำสั่ง separates เหตุผล from
+// วัตถุประสงค์ on different ย่อหน้า).
+function oneBody(text: string) {
   return new Paragraph({
     alignment: AlignmentType.THAI_DISTRIBUTE,
     indent: { firstLine: convertMillimetersToTwip(12.5) },
     spacing: { after: 120, line: 276, lineRule: "auto" }, // line 276/240 ≈ 1.15
     children: [run(text)],
   });
+}
+function bodyParas(text: string): Paragraph[] {
+  return text
+    .split(/\n\s*\n/) // blank-line separator → new paragraph
+    .map((t) => t.trim())
+    .filter(Boolean)
+    .map(oneBody);
 }
 
 export async function buildCommandDocx(
@@ -102,22 +113,26 @@ export async function buildCommandDocx(
   const subjFull = `เรื่อง ${subject}${letter.subjectSuffix ? ` ${letter.subjectSuffix}` : ""}`;
   children.push(center(subjFull, { spaceAfter: 120 }));
 
-  // ── เส้นคั่น (asterisks style only) ──
+  // ── เส้นคั่น ──
   if (letter.dividerStyle === "asterisks") {
     children.push(center("******************************", { spaceAfter: 120 }));
+  } else if (letter.dividerStyle === "underline") {
+    // Short centered horizontal rule under "เรื่อง" — matches ตร. ๔๑๙/๒๕๕๖.
+    // Em-dashes connect seamlessly in TH SarabunPSK to form a continuous line.
+    children.push(center("—".repeat(25), { spaceAfter: 120 }));
   }
 
   // ── เนื้อหา ──
-  if (letter.objective) children.push(body(letter.objective));
-  if (letter.legalBasis) children.push(body(letter.legalBasis));
+  if (letter.objective) children.push(...bodyParas(letter.objective));
+  if (letter.legalBasis) children.push(...bodyParas(letter.legalBasis));
   // legacy fallback
   if (!letter.objective && !letter.legalBasis && letter.introduction) {
-    children.push(body(letter.introduction));
+    children.push(...bodyParas(letter.introduction));
   }
-  for (const d of letter.directives ?? []) children.push(body(d));
-  if (letter.isAmendment) children.push(body("นอกนั้นให้เป็นไปตามคำสั่งเดิมทุกประการ"));
-  if (letter.effectiveClause) children.push(body(letter.effectiveClause));
-  if (!letter.effectiveClause && letter.closing) children.push(body(letter.closing));
+  for (const d of letter.directives ?? []) children.push(...bodyParas(d));
+  if (letter.isAmendment) children.push(oneBody("นอกนั้นให้เป็นไปตามคำสั่งเดิมทุกประการ"));
+  if (letter.effectiveClause) children.push(...bodyParas(letter.effectiveClause));
+  if (!letter.effectiveClause && letter.closing) children.push(...bodyParas(letter.closing));
 
   // ── สั่ง ณ วันที่ (centered) ──
   children.push(
