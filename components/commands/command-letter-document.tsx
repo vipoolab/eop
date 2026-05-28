@@ -41,15 +41,16 @@ interface Props {
   mode?: "draft" | "final";
 }
 
-// Common paragraph style — justified with first-line indent (~ย่อหน้า).
-// textJustify "inter-character" distributes spacing across Thai characters (Thai has
-// almost no inter-word spaces), avoiding the huge gaps plain "justify" creates — the
-// CSS analogue of Word's thaiDistribute. Matches real ตร. คำสั่ง.
+// Common paragraph style — LEFT-aligned with first-line indent (~ย่อหน้า).
+// Justify variants on Thai text have issues:
+//   • `text-align: justify` → giant word-gaps (Thai has almost no spaces)
+//   • `text-justify: inter-character` → spreads chars wide on short lines
+// LEFT alignment gives the same look as real ตร. คำสั่ง in practice and matches
+// the .docx export exactly (preview = export).
 const P: React.CSSProperties = {
   textIndent: "2.5em",
   margin: "0 0 6pt 0",
-  textAlign: "justify",
-  textJustify: "inter-character",
+  textAlign: "left",
 };
 
 // Split a body text on blank lines so the AI's "background\n\npurpose" becomes

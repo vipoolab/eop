@@ -50,17 +50,20 @@ function center(text: string, opts: { bold?: boolean; spaceAfter?: number } = {}
     children: [run(text, { bold: opts.bold })],
   });
 }
-// Thai-distributed justified body paragraph(s) with first-line indent (~2.5em ≈ 1.25cm).
-// THAI_DISTRIBUTE spreads the slack across Thai characters (not just the few ASCII
-// spaces), so lines stay flush on both edges WITHOUT the giant word-gaps that plain
-// JUSTIFIED produces on space-sparse Thai text — matching real ตร. คำสั่ง.
+// Left-aligned body paragraph(s) with first-line indent (~2.5em ≈ 1.25cm).
+// Why LEFT instead of justified:
+//   • `both` justify on Thai (sparse spaces) → giant word-gaps after "๑." etc.
+//   • `thaiDistribute` → spreads chars even on short middle lines (wide characters).
+// LEFT gives the same effective look as real ตร. คำสั่ง — their natural Thai
+// word-breaking makes lines fill the width anyway, so the right edge looks
+// nearly flush without forcing distribution.
 //
 // `bodyParas` splits the input on blank lines so the AI's "background ... \n\n purpose"
 // becomes TWO properly-indented paragraphs (real ตร. คำสั่ง separates เหตุผล from
 // วัตถุประสงค์ on different ย่อหน้า).
 function oneBody(text: string) {
   return new Paragraph({
-    alignment: AlignmentType.THAI_DISTRIBUTE,
+    alignment: AlignmentType.LEFT,
     indent: { firstLine: convertMillimetersToTwip(12.5) },
     spacing: { after: 120, line: 276, lineRule: "auto" }, // line 276/240 ≈ 1.15
     children: [run(text)],
