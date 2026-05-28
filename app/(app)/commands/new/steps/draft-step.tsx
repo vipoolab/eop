@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import type { DrafterOutput } from "@/lib/commands/types";
 import { safeJson } from "@/lib/utils";
-import { CommandLetterDocument } from "@/components/commands/command-letter-document";
+import { DocxBlobPreview } from "@/components/commands/docx-blob-preview";
 import { DownloadDocxButton } from "@/components/commands/download-docx-button";
 
 export interface IntentFields {
@@ -439,12 +439,12 @@ function FormalLetterPreview({ draft }: { draft: DrafterOutput }) {
         <div className="flex items-center gap-2 min-w-0">
           <FileText className="h-4 w-4 text-[#1e3a5f] dark:text-amber-400 shrink-0" />
           <span className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">
-            ตัวอย่างคำสั่ง (Preview) — หน้ากระดาษ A4
+            ตัวอย่างคำสั่ง (Preview จากไฟล์ docx) — ตรงกับที่ดาวน์โหลดทุกประการ
           </span>
         </div>
         <DownloadDocxButton letter={draft.letter} />
       </div>
-      <CommandLetterDocument letter={draft.letter} mode="draft" />
+      <DocxBlobPreview letter={draft.letter} />
     </section>
   );
 }

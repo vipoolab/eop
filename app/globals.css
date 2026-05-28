@@ -2,6 +2,29 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* ── TH SarabunPSK alias for docx-preview ─────────────────────────────────
+ * The .docx export references "TH SarabunPSK" in run properties. docx-preview
+ * renders the file in the browser using the browser's font registry; without
+ * an explicit alias the browser would substitute a system font and Thai
+ * glyphs would render loosely. Mapping the family name to our self-hosted
+ * THSarabunNew TTF (same SIPA family, just renamed) makes the preview match
+ * the downloaded .docx character-for-character.
+ */
+@font-face {
+  font-family: "TH SarabunPSK";
+  src: url("/fonts/THSarabunNew.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "TH SarabunPSK";
+  src: url("/fonts/THSarabunNew-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   /* Official Thai Police palette */
   --background: #f5f6f8;
