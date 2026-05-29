@@ -89,6 +89,32 @@ function stripFences(s: string): string {
     .trim();
 }
 
+// Salvage the `text` field from a near-JSON response that JSON.parse couldn't
+// handle (usually unescaped \n / " inside long Thai text). Returns the bare
+// OCR content — never the {"text":"..."} envelope — so the user always sees
+// clean text in the UI.
+function salvageOcrResponse(raw: string): OcrAIResponse {
+  const match = raw.match(
+    /"text"\s*:\s*"([\s\S]*?)(?:"\s*,\s*"(?:confidence|notes)"|"\s*\}\s*$)/
+  );
+  if (!match) {
+    // No JSON envelope at all — surface the whole thing.
+    return { text: raw.trim(), confidence: 0.85, notes: "non-JSON response" };
+  }
+  const unescaped = match[1]
+    .replace(/\\n/g, "\n")
+    .replace(/\\r/g, "\r")
+    .replace(/\\t/g, "\t")
+    .replace(/\\"/g, '"')
+    .replace(/\\\\/g, "\\");
+  const confMatch = raw.match(/"confidence"\s*:\s*([\d.]+)/);
+  return {
+    text: unescaped.trim(),
+    confidence: confMatch ? parseFloat(confMatch[1]) : 0.85,
+    notes: "JSON parse failed — extracted via wrapper-strip",
+  };
+}
+
 export async function performOCR(input: OcrInput): Promise<OcrOutput | OcrFail> {
   const start = Date.now();
 
@@ -142,15 +168,14 @@ export async function performOCR(input: OcrInput): Promise<OcrOutput | OcrFail> 
     }
 
     let parsed: OcrAIResponse;
+    const cleaned = stripFences(block.text);
     try {
-      parsed = JSON.parse(stripFences(block.text)) as OcrAIResponse;
+      parsed = JSON.parse(cleaned) as OcrAIResponse;
     } catch {
-      // Fallback: treat whole response as text
-      parsed = {
-        text: block.text.trim(),
-        confidence: 0.85,
-        notes: "AI returned non-JSON; raw text used",
-      };
+      // Long Thai text often has unescaped newlines/quotes that break
+      // JSON.parse. Salvage just the inner `text` field by regex so the
+      // user never sees the {"text":"..."} envelope in the UI.
+      parsed = salvageOcrResponse(cleaned);
     }
 
     const text = parsed.text ?? "";
