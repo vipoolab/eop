@@ -89,29 +89,48 @@ function stripFences(s: string): string {
     .trim();
 }
 
-// Salvage the `text` field from a near-JSON response that JSON.parse couldn't
-// handle (usually unescaped \n / " inside long Thai text). Returns the bare
-// OCR content — never the {"text":"..."} envelope — so the user always sees
-// clean text in the UI.
-function salvageOcrResponse(raw: string): OcrAIResponse {
-  const match = raw.match(
-    /"text"\s*:\s*"([\s\S]*?)(?:"\s*,\s*"(?:confidence|notes)"|"\s*\}\s*$)/
-  );
-  if (!match) {
-    // No JSON envelope at all — surface the whole thing.
-    return { text: raw.trim(), confidence: 0.85, notes: "non-JSON response" };
-  }
-  const unescaped = match[1]
+function unescapeJsonString(s: string): string {
+  return s
     .replace(/\\n/g, "\n")
     .replace(/\\r/g, "\r")
     .replace(/\\t/g, "\t")
     .replace(/\\"/g, '"')
     .replace(/\\\\/g, "\\");
-  const confMatch = raw.match(/"confidence"\s*:\s*([\d.]+)/);
+}
+
+// Salvage the `text` field from a near-JSON response that JSON.parse couldn't
+// handle. Common causes:
+//   • Long Thai text with literal newlines / unescaped quotes inside the
+//     `text` value.
+//   • Response truncated mid-stream by max_tokens — no closing `"` ever
+//     appears, so the strict regex won't match.
+// Returns the bare OCR content — NEVER the {"text":"..."} envelope — so the
+// user always sees clean document text in the UI.
+function salvageOcrResponse(raw: string): OcrAIResponse {
+  // Path A: well-shaped envelope (just unescaped chars inside text).
+  const tidy = raw.match(
+    /"text"\s*:\s*"([\s\S]*?)(?:"\s*,\s*"(?:confidence|notes)"|"\s*\}\s*$)/
+  );
+  if (tidy) {
+    const confMatch = raw.match(/"confidence"\s*:\s*([\d.]+)/);
+    return {
+      text: unescapeJsonString(tidy[1]).trim(),
+      confidence: confMatch ? parseFloat(confMatch[1]) : 0.85,
+      notes: "JSON parse failed — extracted via wrapper-strip",
+    };
+  }
+
+  // Path B: severely malformed / truncated. Strip whatever envelope we can
+  // see, leaving the document content. We never want the literal characters
+  // `{"text":"` or `","confidence":...}` to reach the UI.
+  let stripped = raw.trim();
+  stripped = stripped.replace(/^\s*\{\s*"text"\s*:\s*"/, ""); // leading wrapper
+  stripped = stripped.replace(/"\s*,\s*"(?:confidence|notes)"\s*:[\s\S]*$/, ""); // trailing metadata
+  stripped = stripped.replace(/"\s*\}\s*$/, ""); // bare closing
   return {
-    text: unescaped.trim(),
-    confidence: confMatch ? parseFloat(confMatch[1]) : 0.85,
-    notes: "JSON parse failed — extracted via wrapper-strip",
+    text: unescapeJsonString(stripped).trim(),
+    confidence: 0.85,
+    notes: "OCR response was truncated/malformed; envelope stripped",
   };
 }
 
@@ -135,7 +154,10 @@ export async function performOCR(input: OcrInput): Promise<OcrOutput | OcrFail> 
 
     const response = await client.messages.create({
       model: MODELS.OPUS,
-      max_tokens: 8000,
+      // 16k gives ~16k chars of headroom for Thai OCR (each Thai char ≈ 1 token);
+      // 8k was getting truncated on long documents and the truncated response
+      // bypassed the strict-shape regex in salvageOcrResponse.
+      max_tokens: 16000,
       system: SYSTEM_PROMPT,
       messages: [
         {
