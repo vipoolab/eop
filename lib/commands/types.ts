@@ -67,10 +67,6 @@ export interface CommandLetter {
   recipient: string;
   /** PoC #3 — ที่มา/เหตุผล/วัตถุประสงค์ (ความนำ ๑-๒ ย่อหน้า) */
   objective?: string;
-  /** อ้างถึง (ระเบียบ/หนังสือก่อนหน้า) */
-  references?: string[];
-  /** สิ่งที่ส่งมาด้วย */
-  attachments?: string[];
   /**
    * อาศัยอำนาจตาม... (ส่วนสำคัญของคำสั่ง — ระบุกฎหมาย/ระเบียบที่ให้อำนาจ)
    * ตัวอย่าง: "อาศัยอำนาจตามความในมาตรา ๑๑ แห่งพระราชบัญญัติตำรวจ
@@ -122,14 +118,6 @@ export interface CommandLetter {
   isAmendment?: boolean;
   /** ยศของผู้ลงนาม (บรรทัดบน signature) เช่น "พลตำรวจเอก" */
   signerRank?: string;
-  /**
-   * กรณีลงนามแทน — "ปฏิบัติราชการแทน" + ตำแหน่งเจ้าของอำนาจ
-   * เช่น signerTitle="รองผู้บัญชาการตำรวจแห่งชาติ ปฏิบัติราชการแทน"
-   *      signerActingFor="ผู้บัญชาการตำรวจแห่งชาติ"
-   */
-  signerActingFor?: string;
-  /** "นิยาม" — คำศัพท์ที่นิยามไว้ต้นคำสั่ง (optional) */
-  glossary?: { term: string; definition: string }[];
   /** รูปแบบวันที่: "abbreviated" = พ.ศ. (ตร.) / "full" = เดือน...พุทธศักราช (สภ.) */
   dateStyle?: "abbreviated" | "full";
   /** เส้นคั่นใต้ "เรื่อง": none (ตร.) / asterisks (สภ.) / underline */
